@@ -1,0 +1,39 @@
+name: CI/CD
+on:
+  push:
+    # Disables the branch builds for some branches,
+    # the dispatcher for PRs should get triggered anyway
+    branches-ignore:
+      # Renovate branch builds disabled as they do not access secrets
+      - 'renovate/**'
+    paths-ignore:
+      - '.gitignore'
+      - '.mergify.yml'
+      - 'CHANGELOG.md'
+      - 'LICENSE'
+      - 'README.md'
+      - 'renovate.json'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dispatcher:
+    runs-on: ubuntu-latest
+    # This filter blocks all pull-request builds that also have a branch build.
+    # Called workflows inherit the event, so, internally the workflow can distinguish.
+    # If the event is not a pull request, then the build should run
+    # (it is either a branch push or a dispatched workflow).
+    # If the pull request comes from another repo, then the build should run.
+    # If the pull request is from a renovate branch, it should run, as
+    # the dispatcher is disabled for renovate branch builds.
+    if: >-
+      github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.full_name != github.repository
+      || startsWith(github.head_ref, 'renovate/')
+    steps:
+      - run: 'true'
+  ci-cd:
+    needs:
+      - dispatcher
+    uses: ./.github/workflows/build-and-deploy.yml
+    secrets: inherit
