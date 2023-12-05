@@ -2,7 +2,12 @@
 name = "rufi"
 version = "0.1.0"
 edition = "2021"
-
+readme = "README.md"
+license = "Apache-2.0"
+description = "Rust Fields: a Rust based implementation of the Aggregate Computing paradigm"
+homepage = "https://github.com/lm98/rufi"
+documentation = "https://github.com/lm98/rufi"
+repository = "https://github.com/lm98/rufi"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
