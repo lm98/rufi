@@ -6,3 +6,7 @@ pub mod core {
 pub mod distributed {
     pub use rf_distributed::*;
 }
+#[cfg(feature = "programs")]
+pub mod programs {
+    pub use rufi_gradient::*;
+}

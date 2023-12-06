@@ -1,6 +1,6 @@
 [package]
 name = "rufi"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 readme = "README.md"
 license = "Apache-2.0"
@@ -12,10 +12,12 @@ repository = "https://github.com/lm98/rufi"
 
 [features]
 default = ["core", "distributed"]
-full = ["core", "distributed"]
+full = ["core", "distributed", "programs"]
 core = []
 distributed = []
+programs = []
 
 [dependencies]
 rf-core = { version = "0.3.0", path = "../rf-core" }
 rf-distributed = { version = "0.1.0", path = "../rf-distributed" }
+rufi_gradient = { version = "2.0.3", path = "../rf-gradient" }
