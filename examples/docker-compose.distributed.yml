@@ -1,0 +1,33 @@
+# docker-compose.distributed.yml
+version: '3'
+
+services:
+  node-1:
+    build:
+      context: ./distributed-gradient
+    command: ["cargo", "run", "--bin", "distributed-gradient", "1"]
+    # Add additional configurations as needed
+
+  node-2:
+    build:
+      context: ./distributed-gradient
+    command: ["cargo", "run", "--bin", "distributed-gradient", "2", "-t"]
+    # Add additional configurations as needed
+
+  node-3:
+    build:
+      context: ./distributed-gradient
+    command: ["cargo", "run", "--bin", "distributed-gradient", "3"]
+    # Add additional configurations as needed
+
+  node-4:
+    build:
+      context: ./distributed-gradient
+    command: ["cargo", "run", "--bin", "distributed-gradient", "4"]
+    # Add additional configurations as needed
+
+  node-5:
+    build:
+      context: ./distributed-gradient
+    command: ["cargo", "run", "--bin", "distributed-gradient", "5"]
+    # Add additional configurations as needed

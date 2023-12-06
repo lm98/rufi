@@ -1,0 +1,7 @@
+# docker-compose.local.yml
+version: '3'
+
+services:
+  local-gradient:
+    build:
+      context: ./local-gradient

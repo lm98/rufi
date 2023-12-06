@@ -1,0 +1,15 @@
+[package]
+name = "distributed-gradient"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rufi = { version = "0.2.0", features = ["full"] }
+tokio = { version = "1.33.0", features = ["full"] }
+async-trait = "0.1.74"
+rumqttc = "0.23.0"
+bytes = "1.5.0"
+serde_json = "1.0.107"
+serde = { version = "1.0.190", features = ["derive"] }
