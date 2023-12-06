@@ -1,13 +1,13 @@
 mod utils;
 
-use rufi::core::context::Context;
-use rufi::core::export::Export;
-use rufi::core::lang::execution::round;
-use rufi::core::path::Path;
-use rufi::core::slot::Slot::{FoldHood, Nbr, Rep};
-use rufi::core::sensor_id::{sensor, SensorId};
-use rufi::core::vm::round_vm::RoundVM;
-use rufi::core::{export, path};
+use rf_core::context::Context;
+use rf_core::export::Export;
+use rf_core::lang::execution::round;
+use rf_core::path::Path;
+use rf_core::slot::Slot::{FoldHood, Nbr, Rep};
+use rf_core::sensor_id::{sensor, SensorId};
+use rf_core::vm::round_vm::RoundVM;
+use rf_core::{export, path};
 use rufi_gradient::gradient;
 use std::any::Any;
 use std::collections::HashMap;
