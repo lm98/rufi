@@ -1,3 +1,5 @@
+pub mod nbr_sensors_setup;
+
 /// This trait represents a discovery strategy for the platform
 pub trait Discovery {
     /// Discovers the neighbours of the device
