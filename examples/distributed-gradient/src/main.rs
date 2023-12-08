@@ -71,22 +71,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )]
     .into_iter()
     .collect();
-    let nbr_sensor: HashMap<SensorId, HashMap<i32, Rc<Box<dyn Any>>>> = HashMap::from([(
-        sensor("nbr_range"),
-        nbrs.clone()
-            .iter()
-            .map(|n| {
-                (
-                    n.clone(),
-                    Rc::new(Box::new(i32::abs(self_id - n)) as Box<dyn Any>),
-                )
-            })
-            .collect(),
-    )]);
     let context = Context::new(
         self_id,
         local_sensor.clone(),
-        nbr_sensor.clone(),
+        Default::default(),
         Default::default(),
     );
 
