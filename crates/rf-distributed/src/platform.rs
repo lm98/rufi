@@ -10,6 +10,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::str::FromStr;
 use std::time::Duration;
+use crate::discovery::nbr_sensors_setup::NbrSensorSetup;
 
 /// This struct represents the platform on which the program is executed
 pub struct RuFiPlatform {
@@ -18,6 +19,7 @@ pub struct RuFiPlatform {
     context: Context,
     discovery: Box<dyn Discovery>,
     discovered_nbrs: Vec<i32>,
+    nbr_sensor_setup: Box<dyn NbrSensorSetup>,
 }
 
 impl RuFiPlatform {
@@ -27,6 +29,7 @@ impl RuFiPlatform {
         network: Box<dyn Network>,
         context: Context,
         discovery: Box<dyn Discovery>,
+        setup: Box<dyn NbrSensorSetup>,
     ) -> Self {
         RuFiPlatform {
             mailbox,
@@ -34,6 +37,7 @@ impl RuFiPlatform {
             context,
             discovery,
             discovered_nbrs: vec![],
+            nbr_sensor_setup: setup,
         }
     }
 
@@ -57,6 +61,7 @@ impl RuFiPlatform {
             let nbrs = self.discovery.discover_neighbors();
             // STEP 2: Subscribe to the topics of the neighbours
             let subscriptions: Vec<i32> = nbrs
+                .clone()
                 .into_iter()
                 .filter(|n| !self.discovered_nbrs.contains(n))
                 .collect();
@@ -66,6 +71,7 @@ impl RuFiPlatform {
             single_cycle(
                 &mut self.mailbox,
                 &mut self.network,
+                &self.nbr_sensor_setup,
                 self.context.clone(),
                 program,
             )
@@ -96,6 +102,7 @@ impl RuFiPlatform {
 async fn single_cycle<P, A>(
     mailbox: &mut Box<dyn Mailbox>,
     network: &mut Box<dyn Network>,
+    setup: &Box<dyn NbrSensorSetup>,
     context: Context,
     program: P,
 ) -> Result<(), Box<dyn Error>>
@@ -107,10 +114,11 @@ where
     let states = mailbox.messages().as_states();
 
     //STEP 4: Execute a round
+    let nbr_sensors = setup.nbr_sensor_setup(states.keys().cloned().collect());
     let context = Context::new(
         context.self_id().clone(),
         context.local_sensors().clone(),
-        context.nbr_sensors().clone(),
+        nbr_sensors,
         states,
     );
     println!("CONTEXT: {:?}", context);
