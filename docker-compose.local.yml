@@ -4,4 +4,5 @@ version: '3'
 services:
   local-gradient:
     build:
-      context: ./local-gradient
+      context: .
+    command: ["cargo", "run", "--bin", "local-gradient"]
