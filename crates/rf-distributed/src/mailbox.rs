@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::message::Message;
 use crate::state::States;
+use std::collections::HashMap;
 
 pub mod factory;
 
@@ -28,7 +28,6 @@ impl AsStates for Messages {
         }
         states
     }
-
 }
 
 #[cfg(test)]
@@ -38,19 +37,19 @@ mod test {
 
     #[test]
     fn test_as_states() {
+        use crate::mailbox::AsStates;
         use crate::message::Message;
         use crate::state::States;
-        use crate::mailbox::AsStates;
+        use rf_core::export;
         use rf_core::export::Export;
         use rf_core::path::Path;
         use std::any::Any;
-        use rf_core::export;
 
         let mut messages = HashMap::new();
         let export_1 = export!((Path::new(), 1));
         let export_2 = export!((Path::new(), 2));
         let export_3 = export!((Path::new(), 3));
-        messages.insert(1, Message::new(1, export_1.clone(),SystemTime::now()));
+        messages.insert(1, Message::new(1, export_1.clone(), SystemTime::now()));
         messages.insert(2, Message::new(2, export_2.clone(), SystemTime::now()));
         messages.insert(3, Message::new(3, export_3.clone(), SystemTime::now()));
 

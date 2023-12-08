@@ -1,20 +1,20 @@
-use rf_core::lang::builtins::{foldhood_plus, mux};
-use rf_core::lang::{nbr, rep};
-use rf_core::vm::round_vm::RoundVM;
-use rf_core::{foldhood_plus, lift};
+use crate::utils::{DeviceState, Topology};
 use rf_core::context::Context;
 use rf_core::export::Export;
+use rf_core::lang::builtins::{foldhood_plus, mux};
 use rf_core::lang::execution::round;
+use rf_core::lang::{nbr, rep};
 use rf_core::path::Path;
-use rf_core::slot::Slot::{FoldHood, Nbr, Rep};
 use rf_core::sensor_id::{sensor, SensorId};
+use rf_core::slot::Slot::{FoldHood, Nbr, Rep};
+use rf_core::vm::round_vm::RoundVM;
 use rf_core::{export, path};
+use rf_core::{foldhood_plus, lift};
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
 use std::iter;
 use std::rc::Rc;
 use std::str::FromStr;
-use crate::utils::{DeviceState, Topology};
 
 pub fn gradient(vm: RoundVM) -> (RoundVM, f64) {
     fn is_source(vm: RoundVM) -> (RoundVM, bool) {
@@ -83,9 +83,9 @@ fn add_source(topology: &mut Topology, source: i32) {
 }
 
 fn run_on_device<A, F: Copy>(program: F, mut topology: Topology, d: i32) -> Topology
-    where
-        F: Fn(RoundVM) -> (RoundVM, A),
-        A: Clone + 'static + FromStr,
+where
+    F: Fn(RoundVM) -> (RoundVM, A),
+    A: Clone + 'static + FromStr,
 {
     // Setup the VM
     let curr = topology.states.get(&d).unwrap().clone();
@@ -114,9 +114,9 @@ fn run_on_device<A, F: Copy>(program: F, mut topology: Topology, d: i32) -> Topo
 }
 
 fn run_on_topology<A, F>(program: F, mut topology: Topology, scheduling: &Vec<i32>) -> Topology
-    where
-        F: Fn(RoundVM) -> (RoundVM, A) + Copy,
-        A: Clone + 'static + FromStr,
+where
+    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    A: Clone + 'static + FromStr,
 {
     // For each device in the provided scheduling, run the program on the device.
     for d in scheduling {

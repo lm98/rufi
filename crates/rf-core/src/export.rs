@@ -202,38 +202,35 @@ impl PartialEq for Export {
             false
         };
 
-        let values_equality = self
-            .map
-            .iter()
-            .all(|(key, _value)| {
-                if let Ok(value) = self.get::<i32>(key) {
-                    if let Ok(other_value) = other.get::<i32>(key) {
-                        value == other_value
-                    } else {
-                        false
-                    }
-                } else if let Ok(value) = self.get::<bool>(key) {
-                    if let Ok(other_value) = other.get::<bool>(key) {
-                        value == other_value
-                    } else {
-                        false
-                    }
-                } else if let Ok(value) = self.get::<String>(key) {
-                    if let Ok(other_value) = other.get::<String>(key) {
-                        value == other_value
-                    } else {
-                        false
-                    }
-                } else if let Ok(value) = self.get::<f64>(key) {
-                    if let Ok(other_value) = other.get::<f64>(key) {
-                        value == other_value
-                    } else {
-                        false
-                    }
+        let values_equality = self.map.iter().all(|(key, _value)| {
+            if let Ok(value) = self.get::<i32>(key) {
+                if let Ok(other_value) = other.get::<i32>(key) {
+                    value == other_value
                 } else {
                     false
                 }
-            });
+            } else if let Ok(value) = self.get::<bool>(key) {
+                if let Ok(other_value) = other.get::<bool>(key) {
+                    value == other_value
+                } else {
+                    false
+                }
+            } else if let Ok(value) = self.get::<String>(key) {
+                if let Ok(other_value) = other.get::<String>(key) {
+                    value == other_value
+                } else {
+                    false
+                }
+            } else if let Ok(value) = self.get::<f64>(key) {
+                if let Ok(other_value) = other.get::<f64>(key) {
+                    value == other_value
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        });
 
         keys__len_equality && values_equality
     }

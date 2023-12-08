@@ -1,15 +1,15 @@
 use rufi::core::context::Context;
 use rufi::core::sensor_id::{sensor, SensorId};
+use rufi::distributed::discovery::Discovery;
+use rufi::distributed::mailbox::factory::{MailboxFactory, ProcessingPolicy};
+use rufi::distributed::network::factory::NetworkFactory;
+use rufi::distributed::platform::RuFiPlatform;
 use rufi::programs::gradient;
 use rumqttc::MqttOptions;
 use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
-use rufi::distributed::discovery::Discovery;
-use rufi::distributed::mailbox::factory::{MailboxFactory, ProcessingPolicy};
-use rufi::distributed::network::factory::NetworkFactory;
-use rufi::distributed::platform::RuFiPlatform;
 
 #[derive(Debug, Default)]
 struct Arguments {
@@ -73,7 +73,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .collect();
     let nbr_sensor: HashMap<SensorId, HashMap<i32, Rc<Box<dyn Any>>>> = HashMap::from([(
         sensor("nbr_range"),
-        nbrs.clone().iter()
+        nbrs.clone()
+            .iter()
             .map(|n| {
                 (
                     n.clone(),
@@ -98,10 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mailbox = MailboxFactory::from_policy(ProcessingPolicy::MemoryLess);
 
     // Setup the platform and run the program
-    RuFiPlatform::new(
-        mailbox,
-        network,
-        context,
-        discovery,
-    ).run_forever(gradient).await
+    RuFiPlatform::new(mailbox, network, context, discovery)
+        .run_forever(gradient)
+        .await
 }

@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
-use std::time::SystemTime;
 use crate::mailbox::{Mailbox, Messages};
 use crate::message::Message;
+use std::collections::{BTreeMap, HashMap};
+use std::time::SystemTime;
 
 /// This enum represent the different processing policies for the mailbox.
 pub enum ProcessingPolicy {
@@ -24,9 +24,17 @@ impl MailboxFactory {
     /// Creates a new [Mailbox] with the given [ProcessingPolicy].
     pub fn from_policy(policy: ProcessingPolicy) -> Box<dyn Mailbox> {
         match policy {
-            ProcessingPolicy::MemoryLess => Box::new(MemoryLessMailbox { messages: HashMap::new() }),
-            ProcessingPolicy::MostRecent => Box::new(TimeOrderedMailbox { messages: HashMap::new(), pop_first: false }),
-            ProcessingPolicy::LeastRecent => Box::new(TimeOrderedMailbox { messages: HashMap::new(), pop_first: true }),
+            ProcessingPolicy::MemoryLess => Box::new(MemoryLessMailbox {
+                messages: HashMap::new(),
+            }),
+            ProcessingPolicy::MostRecent => Box::new(TimeOrderedMailbox {
+                messages: HashMap::new(),
+                pop_first: false,
+            }),
+            ProcessingPolicy::LeastRecent => Box::new(TimeOrderedMailbox {
+                messages: HashMap::new(),
+                pop_first: true,
+            }),
         }
     }
 }
@@ -77,14 +85,14 @@ impl Mailbox for TimeOrderedMailbox {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-    use std::time::SystemTime;
     use crate::mailbox::factory::{MailboxFactory, ProcessingPolicy};
     use crate::message::Message;
+    use rf_core::export;
     use rf_core::export::Export;
     use rf_core::path::Path;
     use std::any::Any;
-    use rf_core::export;
+    use std::collections::HashMap;
+    use std::time::SystemTime;
 
     #[test]
     fn test_memory_less() {
@@ -99,7 +107,7 @@ mod test {
         assert_eq!(messages, HashMap::from([(2, msg_2), (3, msg_3.clone())]));
 
         // update msg_2
-        let new_export_2 = export!((Path::new(), 2+2));
+        let new_export_2 = export!((Path::new(), 2 + 2));
         let new_msg_2 = Message::new(2, new_export_2, SystemTime::now());
         mailbox.enqueue(new_msg_2.clone());
         let messages = mailbox.messages();
@@ -119,9 +127,9 @@ mod test {
         mailbox.enqueue(msg_3.clone());
 
         // add the second round of messages
-        let new_export_2 = export!((Path::new(), 2+2));
+        let new_export_2 = export!((Path::new(), 2 + 2));
         let new_msg_2 = Message::new(2, new_export_2, SystemTime::now());
-        let new_export_3 = export!((Path::new(), 3+3));
+        let new_export_3 = export!((Path::new(), 3 + 3));
         let new_msg_3 = Message::new(3, new_export_3, SystemTime::now());
         mailbox.enqueue(new_msg_2.clone());
         mailbox.enqueue(new_msg_3.clone());
@@ -148,9 +156,9 @@ mod test {
         mailbox.enqueue(msg_3.clone());
 
         // add the second round of messages
-        let new_export_2 = export!((Path::new(), 2+2));
+        let new_export_2 = export!((Path::new(), 2 + 2));
         let new_msg_2 = Message::new(2, new_export_2, SystemTime::now());
-        let new_export_3 = export!((Path::new(), 3+3));
+        let new_export_3 = export!((Path::new(), 3 + 3));
         let new_msg_3 = Message::new(3, new_export_3, SystemTime::now());
         mailbox.enqueue(new_msg_2.clone());
         mailbox.enqueue(new_msg_3.clone());

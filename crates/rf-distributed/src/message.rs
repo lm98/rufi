@@ -1,6 +1,6 @@
-use std::time::SystemTime;
 use rf_core::export::Export;
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 
 /// This struct represent a message that will be sent between nodes.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -22,11 +22,10 @@ impl Message {
 
 #[cfg(test)]
 mod test {
-    use std::any::Any;
-    use std::collections::HashMap;
-    use rf_core::path::Path;
-    use rf_core::export;
     use super::*;
+    use rf_core::export;
+    use rf_core::path::Path;
+    use std::any::Any;
 
     #[test]
     fn test_new() {

@@ -61,7 +61,6 @@ where
     F: Fn(RoundVM) -> (RoundVM, A),
     G: Fn(RoundVM, A) -> (RoundVM, A),
 {
-
     vm.nest(
         Rep(vm.index().clone()),
         vm.unless_folding_on_others(),
@@ -159,7 +158,6 @@ where
     TH: Fn(RoundVM) -> (RoundVM, A),
     EL: Fn(RoundVM) -> (RoundVM, A),
 {
-
     vm.nest(
         Branch(vm.index().clone()),
         vm.unless_folding_on_others(),
