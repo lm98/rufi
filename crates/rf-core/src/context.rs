@@ -6,6 +6,15 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::FromStr;
 
+/// This type represents the local sensors of the device.
+pub type LocalSensors = HashMap<SensorId, Rc<Box<dyn Any>>>;
+
+/// This type represents the neighbouring sensors of the device.
+pub type NbrSensors = HashMap<SensorId, HashMap<i32, Rc<Box<dyn Any>>>>;
+
+/// This type represents the neighbouring exports of the device.
+pub type Exports = HashMap<i32, Export>;
+
 /// # Context implementation
 ///
 /// * `selfId` The ID of the device that this context is for.
@@ -18,9 +27,9 @@ use std::str::FromStr;
 #[derive(Debug, Clone)]
 pub struct Context {
     self_id: i32,
-    local_sensor: HashMap<SensorId, Rc<Box<dyn Any>>>,
-    nbr_sensor: HashMap<SensorId, HashMap<i32, Rc<Box<dyn Any>>>>,
-    exports: HashMap<i32, Export>,
+    local_sensor: LocalSensors,
+    nbr_sensor: NbrSensors,
+    exports: Exports,
 }
 
 impl Context {
@@ -41,9 +50,9 @@ impl Context {
     /// The new Context.
     pub fn new(
         self_id: i32,
-        local_sensor: HashMap<SensorId, Rc<Box<dyn Any>>>,
-        nbr_sensor: HashMap<SensorId, HashMap<i32, Rc<Box<dyn Any>>>>,
-        exports: HashMap<i32, Export>,
+        local_sensor: LocalSensors,
+        nbr_sensor: NbrSensors,
+        exports: Exports,
     ) -> Self {
         Self {
             self_id,
@@ -57,7 +66,7 @@ impl Context {
         &self.self_id
     }
 
-    pub fn exports(&self) -> &HashMap<i32, Export> {
+    pub fn exports(&self) -> &Exports {
         &self.exports
     }
 
@@ -96,7 +105,7 @@ impl Context {
             .and_then(|export| export.get(path))
     }
 
-    pub fn local_sensors(&self) -> &HashMap<SensorId, Rc<Box<dyn Any>>> {
+    pub fn local_sensors(&self) -> &LocalSensors {
         &self.local_sensor
     }
 
@@ -118,7 +127,7 @@ impl Context {
             .and_then(|value| value.downcast_ref::<A>())
     }
 
-    pub fn nbr_sensors(&self) -> &HashMap<SensorId, HashMap<i32, Rc<Box<dyn Any>>>> {
+    pub fn nbr_sensors(&self) -> &NbrSensors {
         &self.nbr_sensor
     }
 
