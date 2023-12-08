@@ -1,3 +1,4 @@
+use crate::discovery::nbr_sensors_setup::NbrSensorSetup;
 use crate::discovery::Discovery;
 use crate::mailbox::{AsStates, Mailbox};
 use crate::message::Message;
@@ -10,7 +11,6 @@ use std::error::Error;
 use std::fmt::Display;
 use std::str::FromStr;
 use std::time::Duration;
-use crate::discovery::nbr_sensors_setup::NbrSensorSetup;
 
 /// This struct represents the platform on which the program is executed
 pub struct RuFiPlatform {
