@@ -1,4 +1,4 @@
-use rufi::core::context::Context;
+use rufi::core::context::{Context, NbrSensors};
 use rufi::core::sensor_id::{sensor, SensorId};
 use rufi::distributed::discovery::Discovery;
 use rufi::distributed::mailbox::factory::{MailboxFactory, ProcessingPolicy};
@@ -10,6 +10,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
+use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 
 #[derive(Debug, Default)]
 struct Arguments {
@@ -51,6 +52,20 @@ impl Discovery for MockDiscovery {
     }
 }
 
+struct MockSetup;
+
+impl MockSetup {
+    pub fn mock_setup() -> Box<dyn NbrSensorSetup> {
+        Box::new(MockSetup {})
+    }
+}
+
+impl NbrSensorSetup for MockSetup {
+    fn nbr_sensor_setup(&self, _nbrs: Vec<i32>) -> NbrSensors {
+        Default::default()
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get arguments from the CLI
@@ -63,6 +78,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
      */
     let discovery = MockDiscovery::mock_discovery(self_id);
     let nbrs = discovery.discover_neighbors();
+
+    let setup = MockSetup::mock_setup();
 
     // Setup the context
     let local_sensor: HashMap<SensorId, Rc<Box<dyn Any>>> = vec![(
@@ -87,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mailbox = MailboxFactory::from_policy(ProcessingPolicy::MemoryLess);
 
     // Setup the platform and run the program
-    RuFiPlatform::new(mailbox, network, context, discovery)
+    RuFiPlatform::new(mailbox, network, context, discovery, setup)
         .run_forever(gradient)
         .await
 }
