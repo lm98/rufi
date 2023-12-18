@@ -33,5 +33,5 @@ pub trait Network {
     ///
     /// * `Ok(NetworkUpdate)` - If a message has been received
     /// * `Err(e)` - If an error occurred
-    async fn recv(&mut self) -> NetworkResult<NetworkUpdate>;
+    async fn receive(&mut self) -> NetworkResult<NetworkUpdate>;
 }

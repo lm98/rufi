@@ -78,7 +78,7 @@ impl Network for AsyncMQTTNetwork {
             .map_err(|e| e.into())
     }
 
-    async fn recv(&mut self) -> NetworkResult<NetworkUpdate> {
+    async fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
         self.receiver
             .recv()
             .await
