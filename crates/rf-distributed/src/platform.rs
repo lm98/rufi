@@ -65,7 +65,6 @@ impl RuFiPlatform {
                 .into_iter()
                 .filter(|n| !self.discovered_nbrs.contains(n))
                 .collect();
-            self.network.subscribe(subscriptions.clone()).await?;
             self.discovered_nbrs.extend(subscriptions);
 
             single_cycle(
