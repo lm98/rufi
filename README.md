@@ -11,6 +11,24 @@ This repository is structured as follows:
 - `crates`: contains the library crates of the RuFi framework.
 - `examples`: contains some binary applications with examples of RuFi usage.
 
+## Running the tests
+In order to run the tests, you'll need to open a terminal inside the project root folder and follow the instructions below:
+
+````shell
+cargo test
+````
+
+In order to run only the tests of a specific crate, you can use the following command:
+
+````shell
+`cargo test -p <crate_name>`
+````
+
+for example:
+
+````shell
+cargo test -p rf-core
+````
 ## Running the examples
 In order to run any example, you'll need to open a terminal inside the project root folder and follow the instructions below:
 
