@@ -15,9 +15,6 @@ pub enum NetworkUpdate {
 /// This trait represent a network that will be used to send and receive messages
 #[async_trait]
 pub trait Network {
-    async fn subscribe(&mut self, topics: Vec<i32>) -> NetworkResult<()>;
-
-    async fn unsubscribe(&mut self, topics: Vec<i32>) -> NetworkResult<()>;
     /// Send a message to the network
     ///
     /// # Arguments
@@ -36,5 +33,5 @@ pub trait Network {
     ///
     /// * `Ok(NetworkUpdate)` - If a message has been received
     /// * `Err(e)` - If an error occurred
-    async fn recv(&mut self) -> NetworkResult<NetworkUpdate>;
+    async fn receive(&mut self) -> NetworkResult<NetworkUpdate>;
 }

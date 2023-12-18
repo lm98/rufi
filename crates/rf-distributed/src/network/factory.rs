@@ -66,19 +66,6 @@ impl AsyncMQTTNetwork {
 
 #[async_trait]
 impl Network for AsyncMQTTNetwork {
-    async fn subscribe(&mut self, topics: Vec<i32>) -> NetworkResult<()> {
-        AsyncMQTTNetwork::subscribe_to_topics(self.client.clone(), topics).await
-    }
-
-    async fn unsubscribe(&mut self, topics: Vec<i32>) -> NetworkResult<()> {
-        for nbr in topics.clone() {
-            self.client
-                .unsubscribe(format!("hello-rufi/{nbr}/subscriptions"))
-                .await?;
-        }
-        Ok(())
-    }
-
     async fn send(&self, source: i32, msg: String) -> NetworkResult<()> {
         self.client
             .publish(
@@ -91,7 +78,7 @@ impl Network for AsyncMQTTNetwork {
             .map_err(|e| e.into())
     }
 
-    async fn recv(&mut self) -> NetworkResult<NetworkUpdate> {
+    async fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
         self.receiver
             .recv()
             .await

@@ -65,7 +65,6 @@ impl RuFiPlatform {
                 .into_iter()
                 .filter(|n| !self.discovered_nbrs.contains(n))
                 .collect();
-            self.network.subscribe(subscriptions.clone()).await?;
             self.discovered_nbrs.extend(subscriptions);
 
             single_cycle(
@@ -138,7 +137,7 @@ where
     network.send(vm_.self_id().clone(), msg_ser).await?;
 
     //STEP 6: Receive the neighbouring exports from the network
-    if let Ok(update) = network.recv().await {
+    if let Ok(update) = network.receive().await {
         match update {
             NetworkUpdate::Update { msg } => {
                 let msg: Message = serde_json::from_str(&msg).unwrap();
