@@ -1,8 +1,8 @@
 use rufi::core::context::{Context, NbrSensors};
 use rufi::core::sensor_id::{sensor, SensorId};
 use rufi::distributed::discovery::Discovery;
-use rufi::distributed::mailbox::factory::{MailboxFactory, ProcessingPolicy};
-use rufi::distributed::network::factory::NetworkFactory;
+use rufi::distributed::impls::mailbox::{MailboxFactory, ProcessingPolicy};
+use rufi::distributed::impls::network::NetworkFactory;
 use rufi::distributed::platform::RuFiPlatform;
 use rufi::programs::gradient;
 use rumqttc::MqttOptions;
