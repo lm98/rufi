@@ -1,6 +1,6 @@
 [package]
 name = "rf-distributed"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 readme = "README.md"
 license = "Apache-2.0"
@@ -13,9 +13,7 @@ repository = "https://github.com/lm98/rufi"
 
 [dependencies]
 rf-core = { version = "0.4.0", path = "../rf-core" }
-tokio = { version = "1.33.0", features = ["full"] }
-async-trait = "0.1.74"
-rumqttc = "0.23.0"
-bytes = "1.5.0"
-serde_json = "1.0.107"
-serde = { version = "1.0.190", features = ["derive"] }
+tokio = { version = "1.35.1", features = ["full"] }
+async-trait = "0.1.77"
+serde_json = "1.0.111"
+serde = { version = "1.0.195", features = ["derive"] }
