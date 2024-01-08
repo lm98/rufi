@@ -10,7 +10,6 @@ use rf_core::vm::round_vm::RoundVM;
 use std::error::Error;
 use std::fmt::Display;
 use std::str::FromStr;
-use std::time::Duration;
 
 /// This struct represents the platform on which the program is executed
 pub struct RuFiPlatform {
@@ -75,8 +74,6 @@ impl RuFiPlatform {
                 program,
             )
             .await?;
-
-            tokio::time::sleep(Duration::from_secs(2)).await;
         }
     }
 }
