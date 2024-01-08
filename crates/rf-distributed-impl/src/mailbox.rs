@@ -85,7 +85,7 @@ impl Mailbox for TimeOrderedMailbox {
 
 #[cfg(test)]
 mod test {
-    use rf_distributed::mailbox::factory::{MailboxFactory, ProcessingPolicy};
+    use crate::mailbox::{MailboxFactory, ProcessingPolicy};
     use rf_distributed::message::Message;
     use rf_core::export;
     use rf_core::export::Export;
