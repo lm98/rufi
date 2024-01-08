@@ -1,5 +1,6 @@
 use rufi::core::context::{Context, NbrSensors};
 use rufi::core::sensor_id::{sensor, SensorId};
+use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 use rufi::distributed::discovery::Discovery;
 use rufi::distributed::impls::mailbox::{MailboxFactory, ProcessingPolicy};
 use rufi::distributed::impls::network::NetworkFactory;
@@ -10,7 +11,6 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
-use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 
 #[derive(Debug, Default)]
 struct Arguments {
