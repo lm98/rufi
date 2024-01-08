@@ -1,7 +1,5 @@
 use async_trait::async_trait;
 
-pub mod factory;
-
 /// This type represent the result of a network operation
 pub type NetworkResult<T> = Result<T, Box<dyn std::error::Error>>;
 

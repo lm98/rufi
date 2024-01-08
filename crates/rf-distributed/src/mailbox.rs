@@ -2,8 +2,6 @@ use crate::message::Message;
 use crate::state::States;
 use std::collections::HashMap;
 
-pub mod factory;
-
 /// This trait represents the mailbox of a device. It is used to store the messages received from the neighbors
 pub trait Mailbox {
     /// Enqueue a message in the mailbox
