@@ -86,10 +86,10 @@ impl Mailbox for TimeOrderedMailbox {
 #[cfg(test)]
 mod test {
     use crate::mailbox::{MailboxFactory, ProcessingPolicy};
-    use rf_distributed::message::Message;
     use rf_core::export;
     use rf_core::export::Export;
     use rf_core::path::Path;
+    use rf_distributed::message::Message;
     use std::any::Any;
     use std::collections::HashMap;
     use std::time::SystemTime;
