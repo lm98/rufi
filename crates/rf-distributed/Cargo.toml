@@ -13,7 +13,6 @@ repository = "https://github.com/lm98/rufi"
 
 [dependencies]
 rf-core = { version = "0.4.2", path = "../rf-core" }
-tokio = { version = "1.35.1", features = ["full"] }
 async-trait = "0.1.77"
 serde_json = "1.0.111"
 serde = { version = "1.0.195", features = ["derive"] }
