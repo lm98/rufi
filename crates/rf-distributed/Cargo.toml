@@ -1,6 +1,6 @@
 [package]
 name = "rf-distributed"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 readme = "README.md"
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ repository = "https://github.com/lm98/rufi"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rf-core = { version = "0.4.0", path = "../rf-core" }
+rf-core = { version = "0.4.2", path = "../rf-core" }
 tokio = { version = "1.35.1", features = ["full"] }
 async-trait = "0.1.77"
 serde_json = "1.0.111"
