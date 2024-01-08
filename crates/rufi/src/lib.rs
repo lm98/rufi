@@ -5,6 +5,10 @@ pub mod core {
 #[cfg(feature = "distributed")]
 pub mod distributed {
     pub use rf_distributed::*;
+    #[cfg(feature = "impls")]
+    pub mod impls {
+        pub use rf_distributed_impl::*;
+    }
 }
 #[cfg(feature = "programs")]
 pub mod programs {
