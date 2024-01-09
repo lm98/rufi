@@ -180,29 +180,6 @@ where
             (vm__, val)
         },
     )
-
-    /*
-    vm.nest_in(Branch(vm.index().clone()));
-    let (mut vm, tag) = vm.locally(|_vm1| (_vm1, cond()));
-    let (mut vm_, val): (RoundVM, A) = match vm.neighbor() {
-        Some(nbr) if nbr != vm.self_id() => {
-            let val_clone = vm.neighbor_val::<A>().unwrap().clone();
-            (vm, val_clone)
-        }
-        _ => {
-            if tag {
-                //locally(vm, thn);
-                vm.locally(thn)
-            } else {
-                //locally(vm, els)
-                vm.locally(els)
-            }
-        }
-    };
-    let res = vm_.nest_write(vm_.unless_folding_on_others(), val);
-    vm_.nest_out(tag);
-    (vm_, res)
-        */
 }
 
 /// Returns the id of the current device.
