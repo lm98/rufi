@@ -98,7 +98,7 @@ impl RoundVM {
     /// An `Option` containing the value of the current path for the current device, if present.
     pub fn previous_round_val<A: 'static + Clone + FromStr>(&self) -> Result<A> {
         self.context
-            .read_export_value::<A>(&self.self_id(), self.status.path())
+            .read_export_value::<A>(self.self_id(), self.status.path())
     }
 
     /// Obtain the value of the current path for the current neighbor
@@ -171,7 +171,7 @@ impl RoundVM {
         F: Fn(RoundVM) -> (RoundVM, A),
     {
         let mut proxy = self.clone();
-        let current_neighbour = proxy.neighbor().map(|id| id.clone());
+        let current_neighbour = proxy.neighbor().clone();
         proxy.status = proxy.status.fold_out();
         let (mut vm_, result) = expr(proxy.clone());
         vm_.status = vm_.status.fold_into(current_neighbour);
@@ -273,7 +273,7 @@ impl RoundVM {
                 })
                 .map(|(id, _)| id.clone())
                 .collect();
-            tmp.insert(0, self.self_id().clone());
+            tmp.insert(0, *self.self_id());
         }
         tmp
     }
