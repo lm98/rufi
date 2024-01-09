@@ -7,7 +7,7 @@ use std::fmt::{Display, Formatter};
 /// * `Rep(index)` - It iteratively updates the value of the input expression at each device using the last computed value.
 /// * `Branch(index)` - Partition the domain into two subspaces that do not interact with each other.
 /// * `Exchange(index)` - The exchange construct handles neighbour-to-neighbour propagation of partial accumulates.
-#[derive(PartialEq, Debug, Clone, Eq, Hash, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Clone, Copy, Eq, Hash, Serialize, Deserialize)]
 pub enum Slot {
     Nbr(i32),
     Rep(i32),
