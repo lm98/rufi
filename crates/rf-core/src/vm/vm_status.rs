@@ -79,7 +79,7 @@ impl VMStatus {
     pub fn fold_into(&self, neighbour: Option<i32>) -> Self {
         Self {
             path: self.path.clone(),
-            index: self.index.clone(),
+            index: self.index,
             neighbour,
             stack: self.stack.clone(),
         }
@@ -165,7 +165,7 @@ impl VMStatus {
         Self {
             path: self.path.clone(),
             index: self.index + 1,
-            neighbour: self.neighbour.clone(),
+            neighbour: self.neighbour,
             stack: self.stack.clone(),
         }
     }
