@@ -171,7 +171,7 @@ impl RoundVM {
         F: Fn(RoundVM) -> (RoundVM, A),
     {
         let mut proxy = self.clone();
-        let current_neighbour = proxy.neighbor().clone();
+        let current_neighbour = *proxy.neighbor();
         proxy.status = proxy.status.fold_out();
         let (mut vm_, result) = expr(proxy.clone());
         vm_.status = vm_.status.fold_into(current_neighbour);
@@ -271,7 +271,7 @@ impl RoundVM {
                 .filter(|(_, export)| {
                     self.status.path().is_root() || export.get::<A>(self.status.path()).is_ok()
                 })
-                .map(|(id, _)| id.clone())
+                .map(|(id, _)| id)
                 .collect();
             tmp.insert(0, *self.self_id());
         }
