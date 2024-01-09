@@ -112,7 +112,7 @@ where
     //STEP 4: Execute a round
     let nbr_sensors = setup.nbr_sensor_setup(states.keys().cloned().collect());
     let context = Context::new(
-        context.self_id().clone(),
+        *context.self_id(),
         context.local_sensors().clone(),
         nbr_sensors,
         states,
@@ -126,12 +126,12 @@ where
 
     //STEP 5: Publish the export
     let msg = Message::new(
-        vm_.self_id().clone(),
+        *vm_.self_id(),
         self_export,
         std::time::SystemTime::now(),
     );
     let msg_ser = serde_json::to_string(&msg).unwrap();
-    network.send(vm_.self_id().clone(), msg_ser).await?;
+    network.send(*vm_.self_id(), msg_ser).await?;
 
     //STEP 6: Receive the neighbouring exports from the network
     if let Ok(update) = network.receive().await {
