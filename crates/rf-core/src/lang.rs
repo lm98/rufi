@@ -26,7 +26,7 @@ where
     F: Fn(RoundVM) -> (RoundVM, A),
 {
     vm.nest(
-        Nbr(vm.index().clone()),
+        Nbr(vm.index()),
         vm.unless_folding_on_others(),
         true,
         |vm| match vm.neighbor() {
@@ -62,7 +62,7 @@ where
     G: Fn(RoundVM, A) -> (RoundVM, A),
 {
     vm.nest(
-        Rep(vm.index().clone()),
+        Rep(vm.index()),
         vm.unless_folding_on_others(),
         true,
         |vm| {
@@ -107,8 +107,8 @@ where
     G: Fn(A, A) -> A,
     H: Fn(RoundVM) -> (RoundVM, A) + Copy,
 {
-    vm.nest(FoldHood(vm.index().clone()), true, true, |mut vm| {
         let (vm_, local_init) = vm.locally(|vm_| init(vm_));
+    vm.nest(FoldHood(vm.index()), true, true, |mut vm| {
         let mut proxy_vm = vm_.clone();
         let mut nbr_field: Vec<A> = Vec::new();
 
@@ -159,7 +159,7 @@ where
     EL: Fn(RoundVM) -> (RoundVM, A),
 {
     vm.nest(
-        Branch(vm.index().clone()),
+        Branch(vm.index()),
         vm.unless_folding_on_others(),
         true,
         |mut vm| {
@@ -215,6 +215,6 @@ where
 ///
 /// the id of the current device
 pub fn mid(vm: RoundVM) -> (RoundVM, i32) {
-    let mid = vm.self_id().clone();
+    let mid = *vm.self_id();
     (vm, mid)
 }
