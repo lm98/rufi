@@ -61,7 +61,7 @@ where
 {
     foldhood(vm, init, aggr, |vm1| {
         let (vm_, self_id) = mid(vm1);
-        let (vm__, nbr_id) = nbr(vm_, |vm2| mid(vm2));
+        let (vm__, nbr_id) = nbr(vm_, mid);
         mux(vm__, |vm3| (vm3, self_id == nbr_id), init, expr)
     })
 }
