@@ -103,12 +103,12 @@ pub fn foldhood<A: Clone + 'static + FromStr, F, G, H>(
     expr: H,
 ) -> (RoundVM, A)
 where
-    F: Fn(RoundVM) -> (RoundVM, A),
+    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
     G: Fn(A, A) -> A,
     H: Fn(RoundVM) -> (RoundVM, A) + Copy,
 {
-        let (vm_, local_init) = vm.locally(|vm_| init(vm_));
     vm.nest(FoldHood(vm.index()), true, true, |mut vm| {
+        let (vm_, local_init) = vm.locally(init);
         let mut proxy_vm = vm_.clone();
         let mut nbr_field: Vec<A> = Vec::new();
 
@@ -155,8 +155,8 @@ pub fn branch<A: Clone + 'static + FromStr, B, TH, EL>(
 ) -> (RoundVM, A)
 where
     B: Fn() -> bool,
-    TH: Fn(RoundVM) -> (RoundVM, A),
-    EL: Fn(RoundVM) -> (RoundVM, A),
+    TH: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    EL: Fn(RoundVM) -> (RoundVM, A) + Copy,
 {
     vm.nest(
         Branch(vm.index()),
@@ -171,9 +171,9 @@ where
                 }
                 _ => {
                     if tag {
-                        vm_.locally(|vm| thn(vm))
+                        vm_.locally(thn)
                     } else {
-                        vm_.locally(|vm| els(vm))
+                        vm_.locally(els)
                     }
                 }
             };
