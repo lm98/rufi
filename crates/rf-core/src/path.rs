@@ -105,6 +105,12 @@ impl Path {
     }
 }
 
+impl Default for Path {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<Vec<Slot>> for Path {
     fn from(slots: Vec<Slot>) -> Self {
         let mut reversed_slots = slots;
