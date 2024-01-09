@@ -75,7 +75,7 @@ impl Path {
         let slots = &self.slots;
         let path = String::from("P://");
         path + &slots
-            .into_iter()
+            .iter()
             .map(|slot| slot.to_str())
             .collect::<Vec<String>>()
             .join("/")
