@@ -60,7 +60,7 @@ struct TimeOrderedMailbox {
 
 impl Mailbox for TimeOrderedMailbox {
     fn enqueue(&mut self, msg: Message) {
-        let msgs = self.messages.entry(msg.source).or_insert(BTreeMap::new());
+        let msgs = self.messages.entry(msg.source).or_default();
         msgs.insert(msg.timestamp, msg);
     }
 
