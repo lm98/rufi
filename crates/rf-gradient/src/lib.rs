@@ -12,7 +12,7 @@ use rf_core::{foldhood_plus, lift};
 /// * `(RoundVM, f64)` - A tuple with the RoundVM after the gradient has been computed and the distance from the source.
 pub fn gradient(vm: RoundVM) -> (RoundVM, f64) {
     fn is_source(vm: RoundVM) -> (RoundVM, bool) {
-        let val = vm.local_sense::<bool>(&sensor("source")).unwrap().clone();
+        let val = *vm.local_sense::<bool>(&sensor("source")).unwrap();
         (vm, val)
     }
 
