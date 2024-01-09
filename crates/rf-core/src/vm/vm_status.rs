@@ -93,7 +93,7 @@ impl VMStatus {
     pub fn fold_out(&self) -> Self {
         Self {
             path: self.path.clone(),
-            index: self.index.clone(),
+            index: self.index,
             neighbour: None,
             stack: self.stack.clone(),
         }
@@ -108,13 +108,13 @@ impl VMStatus {
         let mut new_stack = self.stack.clone();
         new_stack.push_front((
             self.path.clone(),
-            self.index.clone(),
-            self.neighbour.clone(),
+            self.index,
+            self.neighbour,
         ));
         Self {
             path: self.path.clone(),
-            index: self.index.clone(),
-            neighbour: self.neighbour.clone(),
+            index: self.index,
+            neighbour: self.neighbour,
             stack: new_stack,
         }
     }
@@ -130,8 +130,8 @@ impl VMStatus {
         match front {
             Some((p, i, n)) => Self {
                 path: p.clone(),
-                index: i.clone(),
-                neighbour: n.clone(),
+                index: i,
+                neighbour: n,
                 stack: new_stack,
             },
             _ => panic!(),
@@ -151,7 +151,7 @@ impl VMStatus {
         Self {
             path: self.path.push(slot),
             index: 0,
-            neighbour: self.neighbour.clone(),
+            neighbour: self.neighbour,
             stack: self.stack.clone(),
         }
     }
