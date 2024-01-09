@@ -202,11 +202,7 @@ impl Display for Export {
 
 impl PartialEq for Export {
     fn eq(&self, other: &Self) -> bool {
-        let keys__len_equality = if self.map.keys().len() == other.map.keys().len() {
-            true
-        } else {
-            false
-        };
+        let keys_len_equality = self.map.keys().len() == other.map.keys().len();
 
         let values_equality = self.map.iter().all(|(key, _value)| {
             if let Ok(value) = self.get::<i32>(key) {
@@ -238,7 +234,7 @@ impl PartialEq for Export {
             }
         });
 
-        keys__len_equality && values_equality
+        keys_len_equality && values_equality
     }
 }
 
