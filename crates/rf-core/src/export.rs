@@ -181,6 +181,12 @@ impl Export {
     }
 }
 
+impl Default for Export {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<HashMap<Path, Rc<Box<dyn Any>>>> for Export {
     fn from(map: HashMap<Path, Rc<Box<dyn Any>>>) -> Self {
         Self { map }
