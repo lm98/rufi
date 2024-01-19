@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rufi = { version = "0.4.2", path = "../../crates/rufi", features = ["full"] }
+rufi = { version = "0.5.0", path = "../../crates/rufi", features = ["full"] }
 tokio = { version = "1.35.1", features = ["full"] }
 async-trait = "0.1.77"
 rumqttc = "0.23.0"
