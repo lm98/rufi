@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use bytes::Bytes;
-use rf_distributed::network::{Network, NetworkResult, NetworkUpdate};
+use rf_distributed::network::{asynchronous::Network, NetworkResult, NetworkUpdate};
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use tokio::sync::mpsc::Receiver;
 
