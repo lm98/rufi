@@ -4,7 +4,7 @@ use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 use rufi::distributed::discovery::Discovery;
 use rufi::distributed::impls::mailbox::{MailboxFactory, ProcessingPolicy};
 use rufi::distributed::impls::network::NetworkFactory;
-use rufi::distributed::platform::RuFiPlatform;
+use rufi::distributed::platform::PlatformFactory;
 use rufi::programs::gradient;
 use rumqttc::MqttOptions;
 use std::any::Any;
@@ -103,8 +103,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup the mailbox
     let mailbox = MailboxFactory::from_policy(ProcessingPolicy::MemoryLess);
 
+
     // Setup the platform and run the program
-    RuFiPlatform::new(mailbox, network, context, discovery, setup)
-        .run_forever(gradient)
-        .await
+    PlatformFactory::async_platform(
+        mailbox,
+        network,
+        context,
+        discovery,
+        setup,
+    ).run_forever(gradient).await
 }
