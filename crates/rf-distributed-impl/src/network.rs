@@ -66,7 +66,7 @@ impl AsyncMQTTNetwork {
 
 #[async_trait]
 impl Network for AsyncMQTTNetwork {
-    async fn send(&self, source: i32, msg: String) -> NetworkResult<()> {
+    async fn send(&mut self, source: i32, msg: String) -> NetworkResult<()> {
         self.client
             .publish(
                 format!("hello-rufi/{source}/subscriptions"),
