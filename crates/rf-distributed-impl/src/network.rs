@@ -4,27 +4,9 @@ use rf_distributed::network::{asynchronous::Network, NetworkResult, NetworkUpdat
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use tokio::sync::mpsc::Receiver;
 
-/// This struct represent a factory that will be used to create a [Network]
-pub struct NetworkFactory;
-
-impl NetworkFactory {
-    /// Create a new [Network] that will be used to send and receive messages, implemented via
-    /// MQTT protocol.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - The options for the MQTT client
-    /// * `topics` - The topics to subscribe to, in order to receive messages
-    ///
-    /// # Returns
-    ///
-    /// * `Box<dyn Network>` - The network created
-    pub async fn async_mqtt_network(options: MqttOptions, topics: Vec<i32>) -> Box<dyn Network> {
-        Box::new(AsyncMQTTNetwork::new(options, topics).await)
-    }
-}
-
-struct AsyncMQTTNetwork {
+/// This struct represent the network that will be used to send and receive messages
+/// using the MQTT protocol.
+pub struct AsyncMQTTNetwork {
     client: AsyncClient,
     receiver: Receiver<NetworkUpdate>,
 }
