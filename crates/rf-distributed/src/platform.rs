@@ -9,23 +9,35 @@ pub mod asynchronous;
 pub struct PlatformFactory;
 
 impl PlatformFactory {
-    pub fn sync_platform(
-        mailbox: Box<dyn Mailbox>,
-        network: Box<dyn crate::network::sync::Network>,
+    pub fn sync_platform<M, N, D, S>(
+        mailbox: M,
+        network: N,
         context: Context,
-        discovery: Box<dyn Discovery>,
-        setup: Box<dyn NbrSensorSetup>,
-    ) -> sync::SyncRuFiPlatform {
+        discovery: D,
+        setup: S,
+    ) -> sync::SyncRuFiPlatform<M, N, D, S>
+    where
+        M: Mailbox,
+        N: crate::network::sync::Network,
+        D: Discovery,
+        S: NbrSensorSetup,
+    {
         sync::SyncRuFiPlatform::new(mailbox, network, context, discovery, setup)
     }
 
-    pub fn async_platform(
-        mailbox: Box<dyn Mailbox>,
-        network: Box<dyn crate::network::asynchronous::Network>,
+    pub fn async_platform<M, N, D, S>(
+        mailbox: M,
+        network: N,
         context: Context,
-        discovery: Box<dyn Discovery>,
-        setup: Box<dyn NbrSensorSetup>,
-    ) -> asynchronous::RuFiPlatform {
+        discovery: D,
+        setup: S,
+    ) -> asynchronous::RuFiPlatform<M, N, D, S>
+    where
+        M: Mailbox,
+        N: crate::network::asynchronous::Network,
+        D: Discovery,
+        S: NbrSensorSetup,
+    {
         asynchronous::RuFiPlatform::new(mailbox, network, context, discovery, setup)
     }
 }
