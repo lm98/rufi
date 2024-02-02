@@ -3,44 +3,55 @@ use rf_distributed::message::Message;
 use std::collections::{BTreeMap, HashMap};
 use std::time::SystemTime;
 
-/// This enum represent the different processing policies for the mailbox.
-pub enum ProcessingPolicy {
-    /// For each neighbouring message, only the last one received is kept. This policy, from the user's viewpoint, acts similarly to
-    /// the [MostRecent] version, but it is more memory efficient since the other messages received are substituted
-    /// with the last received.
-    MemoryLess,
-    /// Keeps every message received from each neighbor, but returns only the most recent one. Used
-    /// for processing in a LIFO order.
-    MostRecent,
-    /// Keeps every message received from each neighbor, but returns only the least recent one. Used
-    /// for processing in a FIFO order.
-    LeastRecent,
-}
-
 /// This struct is used as a factory for [Mailbox]es.
 pub struct MailboxFactory;
 
 impl MailboxFactory {
-    /// Creates a new [Mailbox] with the given [ProcessingPolicy].
-    pub fn from_policy(policy: ProcessingPolicy) -> Box<dyn Mailbox> {
-        match policy {
-            ProcessingPolicy::MemoryLess => Box::new(MemoryLessMailbox {
-                messages: HashMap::new(),
-            }),
-            ProcessingPolicy::MostRecent => Box::new(TimeOrderedMailbox {
-                messages: HashMap::new(),
-                pop_first: false,
-            }),
-            ProcessingPolicy::LeastRecent => Box::new(TimeOrderedMailbox {
-                messages: HashMap::new(),
-                pop_first: true,
-            }),
+    /// Creates a new [MemoryLessMailbox] with a memory less message processing policy.
+    ///For each neighbouring message, only the last one received is kept. This policy, from the user's viewpoint, acts similarly to
+    /// the [MostRecent] version, but it is more memory efficient since the other messages received are substituted
+    /// with the last received.
+    pub fn memory_less() -> MemoryLessMailbox {
+        MemoryLessMailbox::new()
+    }
+
+    /// Creates a new [TimeOrderedMailbox] with a most recent message processing policy.
+    /// Keeps every message received from each neighbor, but returns only the most recent one. Used
+    /// for processing in a LIFO order.
+    pub fn most_recent() -> TimeOrderedMailbox {
+        TimeOrderedMailbox {
+            messages: HashMap::new(),
+            pop_first: false,
+        }
+    }
+
+    /// Creates a new [TimeOrderedMailbox] with a least recent message processing policy.
+    /// Keeps every message received from each neighbor, but returns only the least recent one. Used
+    /// for processing in a FIFO order.
+    pub fn least_recent() -> TimeOrderedMailbox {
+        TimeOrderedMailbox {
+            messages: HashMap::new(),
+            pop_first: true,
         }
     }
 }
 
-struct MemoryLessMailbox {
+pub struct MemoryLessMailbox {
     messages: HashMap<i32, Message>,
+}
+
+impl MemoryLessMailbox {
+    pub fn new() -> Self {
+        MemoryLessMailbox {
+            messages: HashMap::new(),
+        }
+    }
+}
+
+impl Default for MemoryLessMailbox {
+    fn default() -> Self {
+        MemoryLessMailbox::new()
+    }
 }
 
 impl Mailbox for MemoryLessMailbox {
@@ -53,7 +64,7 @@ impl Mailbox for MemoryLessMailbox {
     }
 }
 
-struct TimeOrderedMailbox {
+pub struct TimeOrderedMailbox {
     messages: HashMap<i32, BTreeMap<SystemTime, Message>>,
     pop_first: bool,
 }
@@ -85,7 +96,7 @@ impl Mailbox for TimeOrderedMailbox {
 
 #[cfg(test)]
 mod test {
-    use crate::mailbox::{MailboxFactory, ProcessingPolicy};
+    use crate::mailbox::MailboxFactory;
     use rf_core::export;
     use rf_core::export::Export;
     use rf_core::path::Path;
@@ -93,10 +104,11 @@ mod test {
     use std::any::Any;
     use std::collections::HashMap;
     use std::time::SystemTime;
+    use rf_distributed::mailbox::Mailbox;
 
     #[test]
     fn test_memory_less() {
-        let mut mailbox = MailboxFactory::from_policy(ProcessingPolicy::MemoryLess);
+        let mut mailbox = MailboxFactory::memory_less();
         let export_2 = export!((Path::new(), 2));
         let export_3 = export!((Path::new(), 3));
         let msg_2 = Message::new(2, export_2.clone(), SystemTime::now());
@@ -116,7 +128,7 @@ mod test {
 
     #[test]
     fn test_most_recent() {
-        let mut mailbox = MailboxFactory::from_policy(ProcessingPolicy::MostRecent);
+        let mut mailbox = MailboxFactory::most_recent();
 
         // add the first round of messages
         let export_2 = export!((Path::new(), 2));
@@ -145,7 +157,7 @@ mod test {
 
     #[test]
     fn test_least_recent() {
-        let mut mailbox = MailboxFactory::from_policy(ProcessingPolicy::LeastRecent);
+        let mut mailbox = MailboxFactory::least_recent();
 
         // add the first round of messages
         let export_2 = export!((Path::new(), 2));
