@@ -6,4 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rufi = { version = "0.5.1", path = "../../crates/rufi", features = ["core", "programs"] }
+rufi = { version = "0.5.2", path = "../../crates/rufi", features = ["core", "programs"] }
