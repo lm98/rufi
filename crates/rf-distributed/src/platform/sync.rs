@@ -13,22 +13,34 @@ use crate::network::{
     sync::Network,
     NetworkUpdate,
 };
-pub struct SyncRuFiPlatform {
-    mailbox: Box<dyn Mailbox>,
-    network: Box<dyn Network>,
+pub struct SyncRuFiPlatform<M, N, D, S>
+where
+    M: Mailbox,
+    N: Network,
+    D: Discovery,
+    S: NbrSensorSetup,
+{
+    mailbox: M,
+    network: N,
     context: Context,
-    discovery: Box<dyn Discovery>,
+    discovery: D,
     discovered_nbrs: Vec<i32>,
-    nbr_sensor_setup: Box<dyn NbrSensorSetup>,
+    nbr_sensor_setup: S,
 }
 
-impl SyncRuFiPlatform {
+impl<M, N, D, S> SyncRuFiPlatform<M, N, D, S>
+where
+    M: Mailbox,
+    N: Network,
+    D: Discovery,
+    S: NbrSensorSetup,
+{
     pub fn new(
-        mailbox: Box<dyn Mailbox>,
-        network: Box<dyn Network>,
+        mailbox: M,
+        network: N,
         context: Context,
-        discovery: Box<dyn Discovery>,
-        setup: Box<dyn NbrSensorSetup>,
+        discovery: D,
+        setup: S,
     ) -> Self {
         SyncRuFiPlatform {
             mailbox,
@@ -65,19 +77,21 @@ impl SyncRuFiPlatform {
             )?;
         }
     }
-
 }
 
-fn single_cycle<P, A>(
-    mailbox: &mut Box<dyn Mailbox>,
-    network: &mut Box<dyn Network>,
-    setup: &Box<dyn NbrSensorSetup>,
+fn single_cycle<P, A, M, N, S>(
+    mailbox: &mut M,
+    network: &mut N,
+    setup: &S,
     context: Context,
     program: P,
 ) -> Result<(), Box<dyn Error>>
     where
         P: Fn(RoundVM) -> (RoundVM, A),
         A: Clone + 'static + FromStr + Display,
+        M: Mailbox,
+        N: Network,
+        S: NbrSensorSetup,
 {
     //STEP 3: Retrieve the neighbouring exports from the mailbox
     let states = mailbox.messages().as_states();

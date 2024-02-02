@@ -15,23 +15,35 @@ use std::fmt::Display;
 use std::str::FromStr;
 
 /// This struct represents the platform on which the program is executed
-pub struct RuFiPlatform {
-    mailbox: Box<dyn Mailbox>,
-    network: Box<dyn Network>,
+pub struct RuFiPlatform<M, N, D, S>
+    where
+        M: Mailbox,
+        N: Network,
+        D: Discovery,
+        S: NbrSensorSetup,
+{
+    mailbox: M,
+    network: N,
     context: Context,
-    discovery: Box<dyn Discovery>,
+    discovery: D,
     discovered_nbrs: Vec<i32>,
-    nbr_sensor_setup: Box<dyn NbrSensorSetup>,
+    nbr_sensor_setup: S,
 }
 
-impl RuFiPlatform {
+impl<M, N, D, S> RuFiPlatform<M, N, D, S>
+where
+    M: Mailbox,
+    N: Network,
+    D: Discovery,
+    S: NbrSensorSetup,
+{
     /// Creates a new platform
     pub fn new(
-        mailbox: Box<dyn Mailbox>,
-        network: Box<dyn Network>,
+        mailbox: M,
+        network: N,
         context: Context,
-        discovery: Box<dyn Discovery>,
-        setup: Box<dyn NbrSensorSetup>,
+        discovery: D,
+        setup: S,
     ) -> Self {
         RuFiPlatform {
             mailbox,
@@ -98,16 +110,19 @@ impl RuFiPlatform {
 /// # Returns
 ///
 /// * `Result<(), Box<dyn Error>>` - The result of the execution
-async fn single_cycle<P, A>(
-    mailbox: &mut Box<dyn Mailbox>,
-    network: &mut Box<dyn Network>,
-    setup: &Box<dyn NbrSensorSetup>,
+async fn single_cycle<P, A, M, N, S>(
+    mailbox: &mut M,
+    network: &mut N,
+    setup: &S,
     context: Context,
     program: P,
 ) -> Result<(), Box<dyn Error>>
     where
         P: Fn(RoundVM) -> (RoundVM, A),
         A: Clone + 'static + FromStr + Display,
+        M: Mailbox,
+        N: Network,
+        S: NbrSensorSetup,
 {
     //STEP 3: Retrieve the neighbouring exports from the mailbox
     let states = mailbox.messages().as_states();
