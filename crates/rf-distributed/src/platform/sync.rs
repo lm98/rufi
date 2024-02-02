@@ -109,8 +109,9 @@ where
 
     //STEP 6: Receive the neighbouring exports from the network
     if let Ok(NetworkUpdate::Update { msg }) = network.receive() {
-        let msg: Message = serde_json::from_str(&msg).unwrap();
-        mailbox.enqueue(msg);
+        if let Ok(msg) = serde_json::from_str(&msg) {
+            mailbox.enqueue(msg);
+        }
     }
     Ok(())
 }
