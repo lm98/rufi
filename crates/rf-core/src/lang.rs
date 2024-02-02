@@ -61,20 +61,15 @@ where
     F: Fn(RoundVM) -> (RoundVM, A),
     G: Fn(RoundVM, A) -> (RoundVM, A),
 {
-    vm.nest(
-        Rep(vm.index()),
-        vm.unless_folding_on_others(),
-        true,
-        |vm| {
-            if vm.previous_round_val::<A>().is_ok() {
-                let prev = vm.previous_round_val::<A>().unwrap().clone();
-                fun(vm, prev)
-            } else {
-                let init_args = init(vm);
-                fun(init_args.0, init_args.1)
-            }
-        },
-    )
+    vm.nest(Rep(vm.index()), vm.unless_folding_on_others(), true, |vm| {
+        if vm.previous_round_val::<A>().is_ok() {
+            let prev = vm.previous_round_val::<A>().unwrap().clone();
+            fun(vm, prev)
+        } else {
+            let init_args = init(vm);
+            fun(init_args.0, init_args.1)
+        }
+    })
 }
 
 /// Aggregates the results of the neighbor computation.

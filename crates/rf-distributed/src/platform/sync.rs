@@ -1,18 +1,15 @@
-use std::error::Error;
-use std::fmt::Display;
-use std::str::FromStr;
+use crate::discovery::nbr_sensors_setup::NbrSensorSetup;
+use crate::discovery::Discovery;
+use crate::mailbox::{AsStates, Mailbox};
+use crate::message::Message;
+use crate::network::{sync::Network, NetworkUpdate};
 use rf_core::context::Context;
 use rf_core::export::Export;
 use rf_core::lang::execution::round;
 use rf_core::vm::round_vm::RoundVM;
-use crate::discovery::Discovery;
-use crate::discovery::nbr_sensors_setup::NbrSensorSetup;
-use crate::mailbox::{AsStates, Mailbox};
-use crate::message::Message;
-use crate::network::{
-    sync::Network,
-    NetworkUpdate,
-};
+use std::error::Error;
+use std::fmt::Display;
+use std::str::FromStr;
 pub struct SyncRuFiPlatform<M, N, D, S>
 where
     M: Mailbox,
@@ -35,13 +32,7 @@ where
     D: Discovery,
     S: NbrSensorSetup,
 {
-    pub fn new(
-        mailbox: M,
-        network: N,
-        context: Context,
-        discovery: D,
-        setup: S,
-    ) -> Self {
+    pub fn new(mailbox: M, network: N, context: Context, discovery: D, setup: S) -> Self {
         SyncRuFiPlatform {
             mailbox,
             network,
@@ -53,9 +44,9 @@ where
     }
 
     pub fn run_forever<P, A>(mut self, program: P) -> Result<(), Box<dyn Error>>
-        where
-            P: Fn(RoundVM) -> (RoundVM, A) + Copy,
-            A: Clone + 'static + FromStr + Display,
+    where
+        P: Fn(RoundVM) -> (RoundVM, A) + Copy,
+        A: Clone + 'static + FromStr + Display,
     {
         loop {
             // STEP 1: Discover neighbours
@@ -86,12 +77,12 @@ fn single_cycle<P, A, M, N, S>(
     context: Context,
     program: P,
 ) -> Result<(), Box<dyn Error>>
-    where
-        P: Fn(RoundVM) -> (RoundVM, A),
-        A: Clone + 'static + FromStr + Display,
-        M: Mailbox,
-        N: Network,
-        S: NbrSensorSetup,
+where
+    P: Fn(RoundVM) -> (RoundVM, A),
+    A: Clone + 'static + FromStr + Display,
+    M: Mailbox,
+    N: Network,
+    S: NbrSensorSetup,
 {
     //STEP 3: Retrieve the neighbouring exports from the mailbox
     let states = mailbox.messages().as_states();
@@ -112,11 +103,7 @@ fn single_cycle<P, A, M, N, S>(
     println!("OUTPUT: {}\nEXPORT: {}\n", result, self_export);
 
     //STEP 5: Publish the export
-    let msg = Message::new(
-        *vm_.self_id(),
-        self_export,
-        std::time::SystemTime::now(),
-    );
+    let msg = Message::new(*vm_.self_id(), self_export, std::time::SystemTime::now());
     let msg_ser = serde_json::to_string(&msg).unwrap();
     network.send(*vm_.self_id(), msg_ser)?;
 

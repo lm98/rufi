@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::network::{NetworkResult, NetworkUpdate};
+use async_trait::async_trait;
 
 /// This trait represent a network that will be used to send and receive messages
 #[async_trait]

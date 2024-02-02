@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let discovery = MockDiscovery(self_id);
     let nbrs = discovery.discover_neighbors();
 
-    let setup = MockSetup {  };
+    let setup = MockSetup {};
 
     // Setup the context
     let local_sensor: HashMap<SensorId, Rc<Box<dyn Any>>> = vec![(
@@ -91,13 +91,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup the mailbox
     let mailbox = MailboxFactory::memory_less();
 
-
     // Setup the platform and run the program
-    PlatformFactory::async_platform(
-        mailbox,
-        network,
-        context,
-        discovery,
-        setup,
-    ).run_forever(gradient).await
+    PlatformFactory::async_platform(mailbox, network, context, discovery, setup)
+        .run_forever(gradient)
+        .await
 }
