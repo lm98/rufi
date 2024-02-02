@@ -2,8 +2,8 @@ use rufi::core::context::{Context, NbrSensors};
 use rufi::core::sensor_id::{sensor, SensorId};
 use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 use rufi::distributed::discovery::Discovery;
-use rufi::distributed::impls::mailbox::{MailboxFactory, ProcessingPolicy};
-use rufi::distributed::impls::network::NetworkFactory;
+use rufi::distributed::impls::mailbox::MailboxFactory;
+use rufi::distributed::impls::network::AsyncMQTTNetwork;
 use rufi::distributed::platform::PlatformFactory;
 use rufi::programs::gradient;
 use rumqttc::MqttOptions;
@@ -36,12 +36,6 @@ impl Arguments {
 
 struct MockDiscovery(i32);
 
-impl MockDiscovery {
-    pub fn mock_discovery(id: i32) -> Box<dyn Discovery> {
-        Box::new(MockDiscovery(id))
-    }
-}
-
 impl Discovery for MockDiscovery {
     fn discover_neighbors(&self) -> Vec<i32> {
         let self_id = self.0;
@@ -53,12 +47,6 @@ impl Discovery for MockDiscovery {
 }
 
 struct MockSetup;
-
-impl MockSetup {
-    pub fn mock_setup() -> Box<dyn NbrSensorSetup> {
-        Box::new(MockSetup {})
-    }
-}
 
 impl NbrSensorSetup for MockSetup {
     fn nbr_sensor_setup(&self, _nbrs: Vec<i32>) -> NbrSensors {
@@ -76,10 +64,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /* Set up a simple topology that will be used for these tests.
      *  Topology: [1] -- [2] -- [3] -- [4] -- [5].
      */
-    let discovery = MockDiscovery::mock_discovery(self_id);
+    let discovery = MockDiscovery(self_id);
     let nbrs = discovery.discover_neighbors();
 
-    let setup = MockSetup::mock_setup();
+    let setup = MockSetup {  };
 
     // Setup the context
     let local_sensor: HashMap<SensorId, Rc<Box<dyn Any>>> = vec![(
@@ -95,13 +83,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Default::default(),
     );
 
-    // Setup the MQTT client
+    // Setup the MQTT client network
     let mut mqttoptions =
         MqttOptions::new(format!("device#{}", self_id), "test.mosquitto.org", 1883);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
-    let network = NetworkFactory::async_mqtt_network(mqttoptions, nbrs.clone()).await;
+    let network = AsyncMQTTNetwork::new(mqttoptions, nbrs.clone()).await;
     // Setup the mailbox
-    let mailbox = MailboxFactory::from_policy(ProcessingPolicy::MemoryLess);
+    let mailbox = MailboxFactory::memory_less();
 
 
     // Setup the platform and run the program
