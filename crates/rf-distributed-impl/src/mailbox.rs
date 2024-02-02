@@ -100,11 +100,11 @@ mod test {
     use rf_core::export;
     use rf_core::export::Export;
     use rf_core::path::Path;
+    use rf_distributed::mailbox::Mailbox;
     use rf_distributed::message::Message;
     use std::any::Any;
     use std::collections::HashMap;
     use std::time::SystemTime;
-    use rf_distributed::mailbox::Mailbox;
 
     #[test]
     fn test_memory_less() {

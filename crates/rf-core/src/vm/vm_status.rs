@@ -106,11 +106,7 @@ impl VMStatus {
     /// A new VMStatus with the current status pushed on the stack.
     pub fn push(&self) -> Self {
         let mut new_stack = self.stack.clone();
-        new_stack.push_front((
-            self.path.clone(),
-            self.index,
-            self.neighbour,
-        ));
+        new_stack.push_front((self.path.clone(), self.index, self.neighbour));
         Self {
             path: self.path.clone(),
             index: self.index,
