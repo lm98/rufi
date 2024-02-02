@@ -1,6 +1,6 @@
 [package]
 name = "rufi"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 readme = "README.md"
 license = "Apache-2.0"
@@ -24,7 +24,7 @@ impls = []
 programs = []
 
 [dependencies]
-rf-core = { version = "0.5.1", path = "../rf-core" }
-rf-distributed = { version = "0.5.1", path = "../rf-distributed" }
-rf-distributed-impl = { version = "0.5.1", path = "../rf-distributed-impl" }
-rufi_gradient = { version = "2.0.10", path = "../rf-gradient" }
+rf-core = { version = "0.5.2", path = "../rf-core" }
+rf-distributed = { version = "0.5.2", path = "../rf-distributed" }
+rf-distributed-impl = { version = "0.5.2", path = "../rf-distributed-impl" }
+rufi_gradient = { version = "2.0.11", path = "../rf-gradient" }
