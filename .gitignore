@@ -26,3 +26,5 @@ Cargo.lock
 /Cargo.lock
 
 /local-scripts
+
+dhat-heap.json
