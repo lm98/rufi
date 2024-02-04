@@ -54,8 +54,15 @@ impl NbrSensorSetup for MockSetup {
     }
 }
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(feature = "dhat-heap")]
+    let _profiler = dhat::Profiler::new_heap();
+
     // Get arguments from the CLI
     let args = Arguments::parse(std::env::args().skip(1))?;
     let self_id = args.id;
@@ -93,6 +100,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Setup the platform and run the program
     PlatformFactory::async_platform(mailbox, network, context, discovery, setup)
-        .run_forever(gradient)
+        .run_n_cycles(gradient, 50)
         .await
 }
