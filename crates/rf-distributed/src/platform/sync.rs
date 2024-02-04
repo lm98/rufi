@@ -49,15 +49,7 @@ where
         A: Clone + 'static + FromStr + Display,
     {
         loop {
-            // STEP 1: Discover neighbours
-            let nbrs = self.discovery.discover_neighbors();
-            // STEP 2: Subscribe to the topics of the neighbours
-            let subscriptions: Vec<i32> = nbrs
-                .clone()
-                .into_iter()
-                .filter(|n| !self.discovered_nbrs.contains(n))
-                .collect();
-            self.discovered_nbrs.extend(subscriptions);
+            self.pre_cycle();
 
             single_cycle(
                 &mut self.mailbox,
@@ -67,6 +59,38 @@ where
                 program,
             )?;
         }
+    }
+
+    pub fn run_n_cycles<P, A>(mut self, program: P, n: usize) -> Result<(), Box<dyn Error>>
+        where
+            P: Fn(RoundVM) -> (RoundVM, A) + Copy,
+            A: Clone + 'static + FromStr + Display,
+    {
+        for _ in 0..n {
+            self.pre_cycle();
+
+            single_cycle(
+                &mut self.mailbox,
+                &mut self.network,
+                &self.nbr_sensor_setup,
+                self.context.clone(),
+                program,
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Performs the pre-cycle operations
+    fn pre_cycle(&mut self) {
+        // STEP 1: Discover neighbours
+        let nbrs = self.discovery.discover_neighbors();
+        // STEP 2: Subscribe to the topics of the neighbours
+        let subscriptions: Vec<i32> = nbrs
+            .clone()
+            .into_iter()
+            .filter(|n| !self.discovered_nbrs.contains(n))
+            .collect();
+        self.discovered_nbrs.extend(subscriptions);
     }
 }
 
