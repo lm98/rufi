@@ -11,10 +11,7 @@ pub struct Path {
 #[macro_export]
 macro_rules! path {
         ($($x:expr),*) => {{
-            let mut temp_vec = Vec::new();
-            $(
-                temp_vec.push($x);
-            )*
+            let mut temp_vec = vec![$($x),*];
             temp_vec.reverse();
             Path::from(temp_vec)
         }};
