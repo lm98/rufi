@@ -1,6 +1,6 @@
 use crate::path::Path;
 use crate::slot::Slot;
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 
 /// # Models the status of the virtual machine.
 ///
@@ -13,7 +13,7 @@ pub struct VMStatus {
     path: Path,
     index: i32,
     neighbour: Option<i32>,
-    stack: LinkedList<(Path, i32, Option<i32>)>,
+    stack: VecDeque<(Path, i32, Option<i32>)>,
 }
 
 impl VMStatus {
@@ -27,7 +27,7 @@ impl VMStatus {
             path: Path::new(),
             index: 0,
             neighbour: None,
-            stack: LinkedList::new(),
+            stack: VecDeque::new(),
         }
     }
 
@@ -55,7 +55,7 @@ impl VMStatus {
     /// # Returns
     ///
     /// The stack of statuses.
-    pub fn stack(&self) -> &LinkedList<(Path, i32, Option<i32>)> {
+    pub fn stack(&self) -> &VecDeque<(Path, i32, Option<i32>)> {
         &self.stack
     }
 
@@ -72,98 +72,42 @@ impl VMStatus {
     ///
     /// # Arguments
     /// * `neighbour` he id of the neighbour.
-    ///
-    /// # Returns
-    ///
-    /// A new VMStatus with the given neighbour.
-    pub fn fold_into(&self, neighbour: Option<i32>) -> Self {
-        Self {
-            path: self.path.clone(),
-            index: self.index,
-            neighbour,
-            stack: self.stack.clone(),
-        }
+    pub fn fold_into(&mut self, neighbour: Option<i32>) {
+        self.neighbour = neighbour;
     }
 
-    /// Fold out of the current slot.
-    ///
-    /// # Returns
-    ///
-    /// A new VMStatus with no neighbour.
-    pub fn fold_out(&self) -> Self {
-        Self {
-            path: self.path.clone(),
-            index: self.index,
-            neighbour: None,
-            stack: self.stack.clone(),
-        }
+    /// Fold out of the current slot, removing the neighbour.
+    pub fn fold_out(&mut self) {
+        self.neighbour = None;
     }
 
     /// Push the current status on the stack.
-    ///
-    /// # Returns
-    ///
-    /// A new VMStatus with the current status pushed on the stack.
-    pub fn push(&self) -> Self {
-        let mut new_stack = self.stack.clone();
-        new_stack.push_front((self.path.clone(), self.index, self.neighbour));
-        Self {
-            path: self.path.clone(),
-            index: self.index,
-            neighbour: self.neighbour,
-            stack: new_stack,
-        }
+    pub fn push(&mut self) {
+        self.stack.push_front((self.path.clone(), self.index, self.neighbour));
     }
 
     /// Pop the current status from the stack.
-    ///
-    /// # Returns
-    ///
-    /// A new VMStatus with the current status popped from the stack.
-    pub fn pop(&self) -> Self {
-        let mut new_stack = self.stack.clone();
-        let front = new_stack.pop_front();
-        match front {
-            Some((p, i, n)) => Self {
-                path: p.clone(),
-                index: i,
-                neighbour: n,
-                stack: new_stack,
-            },
-            _ => panic!(),
+    pub fn pop(&mut self) {
+        if let Some((p, i, n)) = self.stack.pop_front() {
+            self.path = p;
+            self.index = i;
+            self.neighbour = n;
         }
     }
 
-    /// Nest the given slot.
+    /// Nest the given slot, pushing it into the path.
     ///
     /// # Arguments
     ///
     /// * `slot` the slot to nest.
-    ///
-    /// # Returns
-    ///
-    /// A new VMStatus with the given slot nested.
-    pub fn nest(&self, slot: Slot) -> Self {
-        Self {
-            path: self.path.push(slot),
-            index: 0,
-            neighbour: self.neighbour,
-            stack: self.stack.clone(),
-        }
+    pub fn nest(&mut self, slot: Slot) {
+        self.path.push(slot);
+        self.index = 0;
     }
 
     /// Increment the index of the current slot.
-    ///
-    /// # Returns
-    ///
-    /// A new VMStatus with the index incremented.
-    pub fn inc_index(&self) -> Self {
-        Self {
-            path: self.path.clone(),
-            index: self.index + 1,
-            neighbour: self.neighbour,
-            stack: self.stack.clone(),
-        }
+    pub fn inc_index(&mut self) {
+        self.index += 1;
     }
 }
 
@@ -173,7 +117,7 @@ impl From<Path> for VMStatus {
             path,
             index: 0,
             neighbour: None,
-            stack: LinkedList::new(),
+            stack: VecDeque::new(),
         }
     }
 }
@@ -194,46 +138,37 @@ mod test {
 
     #[test]
     fn test_fold_unfold() {
-        let status = VMStatus::new();
-        assert_eq!(status.neighbour, None);
-        let s1 = status.fold_into(Some(7));
-        let s2 = status.fold_into(Some(8));
-        assert_eq!(status.neighbour, None);
-        assert!(!status.is_folding());
-        assert_eq!(s1.neighbour, Some(7));
-        assert!(s1.is_folding());
-        assert_eq!(s2.neighbour, Some(8));
-        assert!(s2.is_folding())
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_as_stack_panic() {
-        let status = VMStatus::new();
-        status
-            .push()
-            .fold_into(Some(7))
-            .nest(Nbr(2))
-            .push()
-            .fold_into(Some(8))
-            .nest(Rep(4))
-            .inc_index()
-            .push()
-            .pop()
-            .pop()
-            .pop()
-            .pop();
+        let mut status_1 = VMStatus::new();
+        let mut status_2 = VMStatus::new();
+        assert_eq!(status_1.neighbour, None);
+        assert!(!status_1.is_folding());
+        status_1.fold_into(Some(7));
+        status_2.fold_into(Some(8));
+        assert_eq!(status_1.neighbour, Some(7));
+        assert!(status_1.is_folding());
+        assert_eq!(status_2.neighbour, Some(8));
+        assert!(status_2.is_folding())
     }
 
     #[test]
     fn test_as_stack() {
-        let status = VMStatus::new();
-        let s1 = status.push();
-        let s2 = s1.fold_into(Some(7)).nest(Nbr(2)).push();
-        let s3 = s2.fold_into(Some(8)).nest(Rep(4)).inc_index().push();
-        let s4 = s3.pop();
-        let s5 = s4.pop();
-        let s6 = s5.pop();
+        let mut status = VMStatus::new();
+        status.push();
+        let mut s2 = status.clone();
+        s2.fold_into(Some(7));
+        s2.nest(Nbr(2));
+        s2.push();
+        let mut s3 = s2.clone();
+        s3.fold_into(Some(8));
+        s3.nest(Rep(4));
+        s3.inc_index();
+        s3.push();
+        let mut s4 = s3.clone();
+        s4.pop();
+        let mut s5 = s4.clone();
+        s5.pop();
+        let mut s6 = s5.clone();
+        s6.pop();
         assert_eq!(s4.index, 1);
         assert_eq!(s4.neighbour, Some(8));
         assert_eq!(s4.path, Path::from(vec![Nbr(2), Rep(4)]));
@@ -247,18 +182,16 @@ mod test {
 
     #[test]
     fn test_index() {
-        let status = VMStatus::new();
+        let mut status = VMStatus::new();
         assert_eq!(status.index, 0);
-        assert_eq!(status.inc_index().index, 1);
-        assert_eq!(status.inc_index().inc_index().inc_index().index, 3);
-        assert_eq!(
-            status
-                .inc_index()
-                .inc_index()
-                .nest(Nbr(0))
-                .inc_index()
-                .index,
-            1
-        )
+        status.inc_index();
+        assert_eq!(status.index, 1);
+        status.inc_index();
+        status.inc_index();
+        assert_eq!(status.index, 3);
+        status.nest(Nbr(0));
+        assert_eq!(status.index, 0);
+        status.inc_index();
+        assert_eq!(status.index, 1);
     }
 }

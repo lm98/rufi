@@ -110,7 +110,7 @@ impl RoundVM {
     ///
     /// # Returns
     ///
-    ///  An `Option` containing the value of the current path for the current neighbor, if present.
+    ///  A `Result` containing the value of the current path for the current neighbor, if present.
     pub fn neighbor_val<A: 'static + Clone + FromStr>(&self) -> Result<A> {
         let n: Result<i32> = self.neighbor().ok_or("Isolated".into());
         self.context.read_export_value::<A>(&n?, self.status.path())
@@ -172,9 +172,9 @@ impl RoundVM {
     {
         let mut proxy = self.clone();
         let current_neighbour = *proxy.neighbor();
-        proxy.status = proxy.status.fold_out();
+        proxy.status.fold_out();
         let (mut vm_, result) = expr(proxy.clone());
-        vm_.status = vm_.status.fold_into(current_neighbour);
+        vm_.status.fold_into(current_neighbour);
         (vm_, result)
     }
 
@@ -198,10 +198,10 @@ impl RoundVM {
         F: Fn(RoundVM) -> (RoundVM, A),
     {
         let mut proxy = self.clone();
-        proxy.status = proxy.status.push();
-        proxy.status = proxy.status.fold_into(Some(id));
+        proxy.status.push();
+        proxy.status.fold_into(Some(id));
         let (mut vm_, result) = expr(proxy.clone());
-        vm_.status = vm_.status.pop();
+        vm_.status.pop();
         (vm_, Some(result))
     }
 
@@ -233,7 +233,8 @@ impl RoundVM {
         F: Fn(RoundVM) -> (RoundVM, A),
     {
         let mut proxy = self.clone();
-        proxy.status = proxy.status.push().nest(slot);
+        proxy.status.push();
+        proxy.status.nest(slot);
         let (mut vm, val) = expr(proxy);
         let res = if write {
             let cloned_path = vm.status.path().clone();
@@ -247,10 +248,12 @@ impl RoundVM {
         } else {
             val
         };
-        vm.status = match inc {
-            true => vm.status.pop().inc_index(),
-            false => vm.status.pop(),
-        };
+        if inc {
+            vm.status.pop();
+            vm.status.inc_index();
+        } else {
+            vm.status.pop();
+        }
         (vm, res)
     }
 
@@ -365,18 +368,10 @@ mod tests {
         let exports = HashMap::from([
             (
                 7,
-                /*Export::from(HashMap::from([(
-                    Path::from(vec![Rep(0), Nbr(0)]),
-                    Box::new(10) as Box<dyn Any>,
-                )]))*/
                 export!((path!(Nbr(0), Rep(0)), 10)),
             ),
             (
                 0,
-                /*Export::from(HashMap::from([(
-                    Path::from(vec![Rep(0), Nbr(0)]),
-                    Box::new(2) as Box<dyn Any>,
-                )]))*/
                 export!((path!(Nbr(0), Rep(0)), 2)),
             ),
         ]);
@@ -385,7 +380,7 @@ mod tests {
         let mut vm = RoundVM::new(context);
         vm.export_stack.push(export!((Path::new(), 0)));
         let status = VMStatus::new();
-        vm.status = status.fold_into(Some(0));
+        vm.status.fold_into(Some(0));
         vm
     }
 
@@ -417,14 +412,16 @@ mod tests {
     #[test]
     fn test_previous_round_val() {
         let mut vm = round_vm_builder();
-        vm.status = vm.status.nest(Rep(0)).nest(Nbr(0));
+        vm.status.nest(Rep(0));
+        vm.status.nest(Nbr(0));
         assert_eq!(vm.previous_round_val::<i32>().unwrap(), 10)
     }
 
     #[test]
     fn test_neighbor_val() {
         let mut vm = round_vm_builder();
-        vm.status = vm.status.nest(Rep(0)).nest(Nbr(0));
+        vm.status.nest(Rep(0));
+        vm.status.nest(Nbr(0));
         assert_eq!(vm.neighbor_val::<i32>().unwrap(), 2)
     }
 
@@ -467,9 +464,9 @@ mod tests {
     fn test_unless_folding_on_others() {
         let mut vm = round_vm_builder();
         assert!(!vm.unless_folding_on_others());
-        vm.status = vm.status.fold_into(None);
+        vm.status.fold_into(None);
         assert!(vm.unless_folding_on_others());
-        vm.status = vm.status.fold_into(Some(7));
+        vm.status.fold_into(Some(7));
         assert!(vm.unless_folding_on_others());
     }
 
@@ -477,9 +474,9 @@ mod tests {
     fn test_only_when_folding_on_self() {
         let mut vm = round_vm_builder();
         assert!(!vm.only_when_folding_on_self());
-        vm.status = vm.status.fold_into(None);
+        vm.status.fold_into(None);
         assert!(!vm.only_when_folding_on_self());
-        vm.status = vm.status.fold_into(Some(7));
+        vm.status.fold_into(Some(7));
         assert!(vm.only_when_folding_on_self());
     }
 }
