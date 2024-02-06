@@ -66,21 +66,6 @@ impl Path {
         self.slots.is_empty()
     }
 
-    /// Return a String representation of the Path
-    ///
-    /// # Returns
-    ///
-    /// A String representation of the Path
-    pub fn to_str(&self) -> String {
-        let slots = &self.slots;
-        let path = String::from("P://");
-        path + &slots
-            .iter()
-            .map(|slot| slot.to_str())
-            .collect::<Vec<String>>()
-            .join("/")
-    }
-
     /// Check if the Path matches another Path
     ///
     /// # Arguments
@@ -123,7 +108,14 @@ impl From<Vec<Slot>> for Path {
 
 impl Display for Path {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.to_str().fmt(f)
+        write!(f, "P://")?;
+        for (i, slot) in self.slots.iter().enumerate() {
+            if i != 0 {
+                write!(f, "/")?;
+            }
+            write!(f, "{}", slot)?;
+        }
+        Ok(())
     }
 }
 
@@ -175,7 +167,7 @@ mod tests {
     #[test]
     fn test_to_str() {
         let path = Path::from(vec![Rep(0), Nbr(0), Nbr(1), Branch(0)]);
-        assert_eq!(path.to_str(), "P://Branch(0)/Nbr(1)/Nbr(0)/Rep(0)")
+        assert_eq!(path.to_string(), "P://Branch(0)/Nbr(1)/Nbr(0)/Rep(0)")
     }
 
     #[test]

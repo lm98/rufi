@@ -15,26 +15,16 @@ pub enum Slot {
     Branch(i32),
     Exchange(i32),
 }
-impl Slot {
-    /// String representation of the Slot.
-    ///
-    /// # Returns
-    ///
-    /// A string representing the Slot.
-    pub fn to_str(&self) -> String {
-        match self {
-            Slot::Nbr(index) => "Nbr(".to_owned() + &index.to_string() + ")",
-            Slot::Rep(index) => "Rep(".to_owned() + &index.to_string() + ")",
-            Slot::FoldHood(index) => "FoldHood(".to_owned() + &index.to_string() + ")",
-            Slot::Branch(index) => "Branch(".to_owned() + &index.to_string() + ")",
-            Slot::Exchange(index) => "Exchange(".to_owned() + &index.to_string() + ")",
-        }
-    }
-}
 
 impl Display for Slot {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.to_str().fmt(f)
+        match self {
+            Slot::Nbr(index) => write!(f, "Nbr({})", index),
+            Slot::Rep(index) => write!(f, "Rep({})", index),
+            Slot::FoldHood(index) => write!(f, "FoldHood({})", index),
+            Slot::Branch(index) => write!(f, "Branch({})", index),
+            Slot::Exchange(index) => write!(f, "Exchange({})", index),
+        }
     }
 }
 
@@ -62,10 +52,10 @@ mod test {
         let rep = Slot::Rep(0);
         let branch = Slot::Branch(0);
         let exchange = Slot::Exchange(0);
-        assert_eq!(nbr.to_str(), "Nbr(0)");
-        assert_eq!(rep.to_str(), "Rep(0)");
-        assert_eq!(branch.to_str(), "Branch(0)");
-        assert_eq!(exchange.to_str(), "Exchange(0)");
+        assert_eq!(nbr.to_string(), "Nbr(0)");
+        assert_eq!(rep.to_string(), "Rep(0)");
+        assert_eq!(branch.to_string(), "Branch(0)");
+        assert_eq!(exchange.to_string(), "Exchange(0)");
     }
 
     #[test]
