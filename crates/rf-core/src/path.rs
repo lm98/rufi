@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use crate::slot::Slot;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -5,7 +6,7 @@ use std::fmt::{Display, Formatter};
 /// A Path is a collection of Slots that behave like an immutable stack
 #[derive(PartialEq, Debug, Clone, Eq, Hash, Serialize, Deserialize)]
 pub struct Path {
-    slots: Vec<Slot>,
+    slots: VecDeque<Slot>,
 }
 
 #[macro_export]
@@ -24,7 +25,7 @@ impl Path {
     ///
     /// A new Path
     pub fn new() -> Self {
-        Self { slots: vec![] }
+        Self { slots: vec![].into() }
     }
 
     /// Push a Slot into the Path
@@ -32,25 +33,17 @@ impl Path {
     /// # Arguments
     ///
     /// * `slot` - The Slot to push
-    ///
-    /// # Returns
-    ///
-    /// A new Path with the Slot pushed
-    pub fn push(&self, slot: Slot) -> Self {
-        Self {
-            slots: [&[slot], &self.slots[..]].concat(),
-        }
+    pub fn push(&mut self, slot: Slot) {
+        self.slots.push_front(slot);
     }
 
     /// Remove the first Slot from the Path
     ///
-    /// # Returns
+    /// # Panics
     ///
-    /// A new Path without the first Slot
-    pub fn pull(&self) -> Self {
-        let mut new_slots = self.slots.clone();
-        new_slots.drain(..1);
-        Self { slots: new_slots }
+    /// If the Path is empty
+    pub fn pull(&mut self) -> Option<Slot> {
+        self.slots.pop_front()
     }
 
     /// Check if the Path is empty
@@ -82,8 +75,8 @@ impl Path {
     /// # Return
     ///
     /// The Slot at the head of the Path
-    pub fn head(&self) -> &Slot {
-        self.slots.first().unwrap()
+    pub fn head(&self) -> Option<&Slot> {
+        self.slots.front()
     }
 }
 
@@ -98,7 +91,7 @@ impl From<Vec<Slot>> for Path {
         let mut reversed_slots = slots;
         reversed_slots.reverse();
         Self {
-            slots: reversed_slots,
+            slots: reversed_slots.into(),
         }
     }
 }
@@ -132,38 +125,38 @@ mod tests {
     #[test]
     fn test_not_empty_head() {
         let path = Path::from(vec![Rep(0), Nbr(0), Nbr(1), Branch(0)]);
-        assert_eq!(path.head(), &Branch(0))
+        assert_eq!(path.head().unwrap(), &Branch(0))
     }
 
     #[test]
-    #[should_panic]
     fn test_empty_head() {
         let path = Path::new();
-        assert_eq!(path.head(), &Rep(0))
+        assert!(path.head().is_none())
     }
 
     #[test]
     fn test_push() {
-        let path = Path::from(vec![Rep(0), Nbr(0), Nbr(1)]).push(Branch(0));
-        assert_eq!(path.slots, vec![Branch(0), Nbr(1), Nbr(0), Rep(0)])
+        let mut path = path![Nbr(1), Nbr(0), Rep(0)];
+        path.push(Branch(0));
+        assert_eq!(path, path![Branch(0), Nbr(1), Nbr(0), Rep(0)])
     }
 
     #[test]
     fn test_not_empty_pull() {
-        let path = Path::from(vec![Rep(0), Nbr(0), Nbr(1), Branch(0)]);
-        assert_eq!(path.pull().slots, vec![Nbr(1), Nbr(0), Rep(0)])
+        let mut path = Path::from(vec![Rep(0), Nbr(0), Nbr(1), Branch(0)]);
+        path.pull();
+        assert_eq!(path.slots, vec![Nbr(1), Nbr(0), Rep(0)])
     }
 
     #[test]
-    #[should_panic]
     fn test_empty_pull() {
-        let path = Path::new();
-        assert_eq!(path.pull(), Path::new())
+        let mut path = Path::new();
+        assert!(path.pull().is_none());
     }
 
     #[test]
     fn test_to_str() {
-        let path = Path::from(vec![Rep(0), Nbr(0), Nbr(1), Branch(0)]);
+        let path = path![Branch(0), Nbr(1), Nbr(0), Rep(0)];
         assert_eq!(path.to_string(), "P://Branch(0)/Nbr(1)/Nbr(0)/Rep(0)")
     }
 
