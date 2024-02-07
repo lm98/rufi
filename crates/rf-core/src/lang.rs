@@ -21,9 +21,9 @@ pub mod macros;
 /// # Returns
 ///
 /// the value of the expression
-pub fn nbr<A: Clone + 'static + FromStr, F>(mut vm: RoundVM, expr: F) -> (RoundVM, A)
+pub fn nbr<A: Clone + 'static + FromStr, F>(vm: &mut RoundVM, expr: F) -> A
 where
-    F: Fn(RoundVM) -> (RoundVM, A),
+    F: Fn(&mut RoundVM) -> A,
 {
     vm.nest(
         Nbr(vm.index()),
@@ -31,8 +31,8 @@ where
         true,
         |vm| match vm.neighbor() {
             Some(nbr) if nbr != vm.self_id() => match vm.neighbor_val::<A>() {
-                Ok(val) => (vm.clone(), val.clone()),
-                _ => expr(vm.clone()),
+                Ok(val) => val,
+                _ => expr(vm),
             },
             _ => expr(vm),
         },
@@ -56,10 +56,10 @@ where
 /// # Returns
 ///
 /// the updated value
-pub fn rep<A: Clone + 'static + FromStr, F, G>(mut vm: RoundVM, init: F, fun: G) -> (RoundVM, A)
+pub fn rep<A: Clone + 'static + FromStr, F, G>(vm: &mut RoundVM, init: F, fun: G) -> A
 where
-    F: Fn(RoundVM) -> (RoundVM, A),
-    G: Fn(RoundVM, A) -> (RoundVM, A),
+    F: Fn(&mut RoundVM) -> A,
+    G: Fn(&mut RoundVM, A) -> A,
 {
     vm.nest(Rep(vm.index()), vm.unless_folding_on_others(), true, |vm| {
         if vm.previous_round_val::<A>().is_ok() {
@@ -67,7 +67,7 @@ where
             fun(vm, prev)
         } else {
             let init_args = init(vm);
-            fun(init_args.0, init_args.1)
+            fun(vm, init_args)
         }
     })
 }
@@ -92,34 +92,32 @@ where
 ///
 /// the aggregated value
 pub fn foldhood<A: Clone + 'static + FromStr, F, G, H>(
-    mut vm: RoundVM,
+    vm: &mut RoundVM,
     init: F,
     aggr: G,
     expr: H,
-) -> (RoundVM, A)
+) -> A
 where
-    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    F: Fn(&mut RoundVM) -> A + Copy,
     G: Fn(A, A) -> A,
-    H: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    H: Fn(&mut RoundVM) -> A + Copy,
 {
-    vm.nest(FoldHood(vm.index()), true, true, |mut vm| {
-        let (vm_, local_init) = vm.locally(init);
-        let mut proxy_vm = vm_.clone();
+    vm.nest(FoldHood(vm.index()), true, true, |vm| {
+        let local_init = vm.locally(init);
         let mut nbr_field: Vec<A> = Vec::new();
 
         //fill the nbr_field with the values from neighbours
-        vm_.aligned_neighbours::<A>().iter().for_each(|id| {
-            let (vm__, opt) = proxy_vm.folded_eval(expr, *id);
-            proxy_vm = vm__;
+        vm.aligned_neighbours::<A>().iter().for_each(|id| {
+            let opt = vm.folded_eval(expr, *id);
             nbr_field.push(opt.unwrap_or(local_init.clone()));
         });
 
         //fold the nbr_field with the provided aggregation function
-        proxy_vm.isolate(|vm_| {
+        vm.isolate(|_vm| {
             let res = nbr_field
                 .iter()
                 .fold(local_init.clone(), |x, y| aggr(x, y.clone()));
-            (vm_, res)
+            res
         })
     })
 }
@@ -143,36 +141,35 @@ where
 ///
 /// the value of the expression
 pub fn branch<A: Clone + 'static + FromStr, B, TH, EL>(
-    mut vm: RoundVM,
+    vm: &mut RoundVM,
     cond: B,
     thn: TH,
     els: EL,
-) -> (RoundVM, A)
+) -> A
 where
     B: Fn() -> bool,
-    TH: Fn(RoundVM) -> (RoundVM, A) + Copy,
-    EL: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    TH: Fn(&mut RoundVM) -> A + Copy,
+    EL: Fn(&mut RoundVM) -> A + Copy,
 {
     vm.nest(
         Branch(vm.index()),
         vm.unless_folding_on_others(),
         true,
         |mut vm| {
-            let (mut vm_, tag) = vm.locally(|_vm1| (_vm1, cond()));
-            let (vm__, val): (RoundVM, A) = match vm_.neighbor() {
-                Some(nbr) if nbr != vm_.self_id() => {
-                    let val_clone = vm_.neighbor_val::<A>().unwrap().clone();
-                    (vm_, val_clone)
+            let tag = vm.locally(|_vm1| cond());
+            let val: A = match vm.neighbor() {
+                Some(nbr) if nbr != vm.self_id() => {
+                    vm.neighbor_val::<A>().unwrap()
                 }
                 _ => {
                     if tag {
-                        vm_.locally(thn)
+                        vm.locally(thn)
                     } else {
-                        vm_.locally(els)
+                        vm.locally(els)
                     }
                 }
             };
-            (vm__, val)
+            val
         },
     )
 }
@@ -186,7 +183,6 @@ where
 /// # Returns
 ///
 /// the id of the current device
-pub fn mid(vm: RoundVM) -> (RoundVM, i32) {
-    let mid = *vm.self_id();
-    (vm, mid)
+pub fn mid(vm: &mut RoundVM) -> i32 {
+    *vm.self_id()
 }

@@ -45,7 +45,7 @@ where
 
     pub fn run_forever<P, A>(mut self, program: P) -> Result<(), Box<dyn Error>>
     where
-        P: Fn(RoundVM) -> (RoundVM, A) + Copy,
+        P: Fn(&mut RoundVM) -> A + Copy,
         A: Clone + 'static + FromStr + Display,
     {
         loop {
@@ -63,7 +63,7 @@ where
 
     pub fn run_n_cycles<P, A>(mut self, program: P, n: usize) -> Result<(), Box<dyn Error>>
         where
-            P: Fn(RoundVM) -> (RoundVM, A) + Copy,
+            P: Fn(&mut RoundVM) -> A + Copy,
             A: Clone + 'static + FromStr + Display,
     {
         for _ in 0..n {
@@ -102,7 +102,7 @@ fn single_cycle<P, A, M, N, S>(
     program: P,
 ) -> Result<(), Box<dyn Error>>
 where
-    P: Fn(RoundVM) -> (RoundVM, A),
+    P: Fn(&mut RoundVM) -> A + Copy,
     A: Clone + 'static + FromStr + Display,
     M: Mailbox,
     N: Network,
@@ -122,14 +122,14 @@ where
     println!("CONTEXT: {:?}", context);
     let mut vm = RoundVM::new(context);
     vm.new_export_stack();
-    let (mut vm_, result) = round(vm, program);
-    let self_export: Export = vm_.export_data().clone();
+    let result = round(&mut vm, program);
+    let self_export: Export = vm.export_data().clone();
     println!("OUTPUT: {}\nEXPORT: {}\n", result, self_export);
 
     //STEP 5: Publish the export
-    let msg = Message::new(*vm_.self_id(), self_export, std::time::SystemTime::now());
+    let msg = Message::new(*vm.self_id(), self_export, std::time::SystemTime::now());
     let msg_ser = serde_json::to_string(&msg).unwrap();
-    network.send(*vm_.self_id(), msg_ser)?;
+    network.send(*vm.self_id(), msg_ser)?;
 
     //STEP 6: Receive the neighbouring exports from the network
     if let Ok(NetworkUpdate::Update { msg }) = network.receive() {

@@ -65,7 +65,7 @@ fn add_source(topology: &mut Topology, source: i32) {
 
 fn run_on_device<A, F: Copy>(program: F, mut topology: Topology, d: i32) -> Topology
 where
-    F: Fn(RoundVM) -> (RoundVM, A),
+    F: Fn(&mut RoundVM) -> A,
     A: Clone + 'static + FromStr,
 {
     // Setup the VM
@@ -74,10 +74,10 @@ where
     let mut vm = RoundVM::new(ctx);
     vm.new_export_stack();
     // Run the program
-    let (mut vm_, _res) = round(vm, program);
+    let _ = round(&mut vm, program);
     // Update the topology with the new exports
     let mut to_update = topology.states.get(&d).unwrap().clone();
-    to_update.update_exports(d, vm_.export_data().clone());
+    to_update.update_exports(d, vm.export_data().clone());
     // Update the exports of the neighbors, simulating the message passing
     to_update
         .nbr_sensor
@@ -95,7 +95,7 @@ where
 
 fn run_on_topology<A, F>(program: F, mut topology: Topology, scheduling: &Vec<i32>) -> Topology
 where
-    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    F: Fn(&mut RoundVM) -> A + Copy,
     A: Clone + 'static + FromStr,
 {
     // For each device in the provided scheduling, run the program on the device.

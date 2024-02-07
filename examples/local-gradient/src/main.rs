@@ -58,9 +58,9 @@ fn main() {
         let mut vm = RoundVM::new(ctx);
         vm.new_export_stack();
         // Run the program
-        let (mut vm_, res) = round(vm, gradient);
+        let res = round(&mut vm, gradient);
         let mut to_update = states.get(&d).unwrap().clone();
-        to_update.update_exports(d, vm_.export_data().clone());
+        to_update.update_exports(d, vm.export_data().clone());
         // Update the exports of the neighbors, simulating the message passing
         to_update
             .nbr_sensor

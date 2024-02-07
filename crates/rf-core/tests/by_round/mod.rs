@@ -15,25 +15,25 @@ use std::rc::Rc;
 #[test]
 fn test_multiple_rounds() {
     //create the vm
-    let vm = init_vm();
+    let mut vm = init_vm();
     //write the aggregate program
-    let program = |vm1| {
+    let program = |vm1: &mut RoundVM| {
         rep(
             vm1,
-            |vm| (vm, 0),
+            |_vm| 0,
             |vm2, a| {
-                let (avm, res) = nbr(vm2, |_vm| (_vm, a));
-                (avm, res + 1)
+                let res = nbr(vm2, |_vm| a);
+                res + 1
             },
         )
     };
     //first round
-    let (vm_, res) = round(vm, program);
+    let res: i32 = round(&mut vm, program);
     assert_eq!(1, res);
     //add to the context the result of the previous round
-    let ctx_ = push_to_ctx(vm_.context().clone(), Path::from(vec![Rep(0)]), res);
+    let ctx_ = push_to_ctx(vm.context().clone(), Path::from(vec![Rep(0)]), res);
     //second round
-    let (_vm__, res_) = round(init_with_ctx(ctx_), program);
+    let res_: i32 = round(&mut init_with_ctx(ctx_), program);
     assert_eq!(2, res_);
 }
 
@@ -45,8 +45,8 @@ fn test_local_value() {
         Default::default(),
         Default::default(),
     );
-    let result = round(init_with_ctx(context), |vm| (vm, 10));
-    assert_eq!(10, result.1);
+    let result = round(&mut init_with_ctx(context), |vm| 10);
+    assert_eq!(10, result);
 }
 
 #[test]
@@ -59,15 +59,15 @@ fn test_alignment() {
         Default::default(),
     );
     // Program: rep(0, foldhood(0)(_ + _)(1))
-    let program = |vm1| {
+    let program = |vm1: &mut RoundVM| {
         rep(
             vm1,
-            |vm| (vm, 0),
-            |vm2, _| foldhood(vm2, |vm| (vm, 0), |a, b| (a + b), |vm3| (vm3, 1)),
+            |_vm| 0,
+            |vm2, _| foldhood(vm2, |_vm| 0, |a, b| a + b, |_vm3| 1),
         )
     };
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(1, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(1, result);
 
     // One neighbor is aligned
     // Export: Map(1 -> Export(Rep(0) -> 1, Rep(0) / FoldHood(0) -> 1))
@@ -75,9 +75,9 @@ fn test_alignment() {
     let mut exports: HashMap<i32, Export> = HashMap::new();
     exports.insert(1, export_dev_1);
     let context = Context::new(0, Default::default(), Default::default(), exports);
-    let vm = init_with_ctx(context);
-    let result = round(vm, program);
-    assert_eq!(2, result.1);
+    let mut vm = init_with_ctx(context);
+    let result = round(&mut vm, program);
+    assert_eq!(2, result);
 }
 
 #[test]
@@ -92,60 +92,65 @@ fn export_should_compose() {
         )
     }
 
-    let expr_1 = |vm: RoundVM| (vm, 1);
-    let expr_2 = |vm| rep(vm, |vm1| (vm1, 7), |vm2, val| (vm2, val + 1));
-    let expr_3 = |vm| {
+    let expr_1 = |_vm: &mut RoundVM| 1;
+    let expr_2 = |vm: &mut RoundVM| rep(vm, |_vm1| 7, |_vm2, val| val + 1);
+    let expr_3 = |vm: &mut RoundVM| {
         foldhood(
             vm,
-            |vm1| (vm1, 0),
+            |_vm1| 0,
             |a, b| (a + b),
             |vm2| {
                 nbr(vm2, |vm3| {
-                    let val = vm3.local_sense::<i32>(&sensor("sensor")).unwrap().clone();
-                    (vm3, val)
+                    *vm3.local_sense::<i32>(&sensor("sensor")).unwrap()
                 })
             },
         )
     };
 
-    let (mut vm_, _) = round(init_vm(), combine(expr_1, expr_1.clone(), |a, b| a + b));
-    assert_eq!(2, vm_.export_data().root::<i32>().clone());
+    let mut vm = init_vm();
+    let _ = round(&mut vm, combine(expr_1, expr_1.clone(), |a, b| a + b));
+    assert_eq!(2, vm.export_data().root::<i32>().clone());
 
-    let (mut vm_, _) = round(init_vm(), combine(expr_2, expr_2.clone(), |a, b| a + b));
-    assert_eq!(16, vm_.export_data().root::<i32>().clone());
+    let mut vm1 = init_vm();
+    let _ = round(&mut vm1, combine(expr_2, expr_2.clone(), |a, b| a + b));
+    assert_eq!(16, vm1.export_data().root::<i32>().clone());
 
-    let (mut vm_, _) = round(
-        init_with_ctx(ctx()),
+    let mut vm2 = init_with_ctx(ctx());
+    let _ = round(
+        &mut vm2,
         combine(expr_3, expr_3.clone(), |a, b| a + b),
     );
-    assert_eq!(10, vm_.export_data().root::<i32>().clone());
+    assert_eq!(10, vm2.export_data().root::<i32>().clone());
 
-    let (mut vm_, _) = round(init_vm(), |vm| {
+    let mut vm3 = init_vm();
+    let _ = round(&mut vm3, |vm: &mut RoundVM| {
         rep(
             vm,
-            |vm1| (vm1, 0),
-            |vm2, _| rep(vm2, |vm3| (vm3, 0), |vm4, _| expr_1(vm4)),
+            |vm1| 0,
+            |vm2, _| rep(vm2, |_vm3| 0, |vm4, _| expr_1(vm4)),
         )
     });
-    assert_eq!(1, vm_.export_data().root::<i32>().clone());
+    assert_eq!(1, vm3.export_data().root::<i32>().clone());
 
-    let (mut vm_, _) = round(init_vm(), |vm| {
+    let mut vm4 = init_vm();
+    let _ = round(&mut vm4, |vm| {
         rep(
             vm,
-            |vm1| (vm1, 0),
-            |vm2, _| rep(vm2, |vm3| (vm3, 0), |vm4, _| expr_2(vm4)),
+            |vm1| 0,
+            |vm2, _| rep(vm2, |vm3| 0, |vm4, _| expr_2(vm4)),
         )
     });
-    assert_eq!(8, vm_.export_data().root::<i32>().clone());
+    assert_eq!(8, vm4.export_data().root::<i32>().clone());
 
-    let (mut vm_, _) = round(init_with_ctx(ctx()), |vm| {
+    let mut vm5 = init_with_ctx(ctx());
+    let _ = round(&mut vm5, |vm: &mut RoundVM| {
         rep(
             vm,
-            |vm1| (vm1, 0),
-            |vm2, _| rep(vm2, |vm3| (vm3, 0), |vm4, _| expr_3(vm4)),
+            |_vm1| 0,
+            |vm2, _| rep(vm2, |_vm3| 0, |vm4, _| expr_3(vm4)),
         )
     });
-    assert_eq!(5, vm_.export_data().root::<i32>().clone());
+    assert_eq!(5, vm5.export_data().root::<i32>().clone());
 }
 
 #[test]
@@ -160,9 +165,9 @@ fn test_foldhood_basic() {
     exports.insert(4, export_dev_4);
     let context = Context::new(0, Default::default(), Default::default(), exports);
     // Program: foldhood(1)(_ + _)(2)
-    let program = |vm| foldhood(vm, |vm| (vm, 1), |a, b| (a + b), |vm1| (vm1, 2));
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(7, result.1);
+    let program = |vm: &mut RoundVM| foldhood(vm, |_vm| 1, |a, b| a + b, |_vm1| 2);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(7, result);
 }
 
 #[test]
@@ -184,16 +189,16 @@ fn test_foldhood_advanced() {
     exports.insert(4, export_dev_4);
     let context = Context::new(0, Default::default(), Default::default(), exports);
     // Program: foldhood(-5)(_ + _)(nbr(2))
-    let program = |vm| {
+    let program = |vm: &mut RoundVM| {
         foldhood(
             vm,
-            |vm| (vm, -5),
+            |_vm| -5,
             |a, b| (a + b),
-            |vm1| nbr(vm1, |vm2| (vm2, 2)),
+            |vm1| nbr(vm1, |_vm2| 2),
         )
     };
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(20, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(20, result);
 }
 
 #[test]
@@ -226,8 +231,8 @@ fn test_nbr() {
         Default::default(),
         Default::default(),
     );
-    let result = round(init_with_ctx(context), |vm| nbr(vm, |vm1| (vm1, 7)));
-    assert_eq!(7, result.1);
+    let result = round(&mut init_with_ctx(context), |vm| nbr(vm, |vm1| 7));
+    assert_eq!(7, result);
 
     // 2 - NBR should support interaction between aligned devices
     let context = Context::new(
@@ -237,23 +242,23 @@ fn test_nbr() {
         create_exports_nbr_test(),
     );
     // Program: foldhood(0)(_ + _)(if (nbr(mid()) == mid()) 0 else 1)
-    let program = |vm| {
+    let program = |vm: &mut RoundVM| {
         foldhood(
             vm,
-            |vm| (vm, 0),
-            |a, b| (a + b),
+            |_vm| 0,
+            |a, b| a + b,
             |vm1| {
-                let (vm2, res) = nbr(vm1, |vm3| mid(vm3));
-                if res == vm2.self_id().clone() {
-                    (vm2, 0)
+                let res = nbr(vm1, mid);
+                if res == vm1.self_id().clone() {
+                    0
                 } else {
-                    (vm2, 1)
+                    1
                 }
             },
         )
     };
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(2, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(2, result);
 }
 
 #[test]
@@ -266,10 +271,10 @@ fn test_rep() {
         Default::default(),
     );
     // Program: rep(9)(_ * 2)
-    let program = |vm| rep(vm, |vm| (vm, 9), |vm1, a| (vm1, a * 2));
+    let program = |vm: &mut RoundVM| rep(vm, |vm| 9, |vm1, a| a * 2);
     // Check if rep use the initial value
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(18, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(18, result);
 
     // Export: Map(0 -> Export(Rep(0) -> 7))
     let export_dev_0 = export!((path!(Rep(0)), 7));
@@ -277,26 +282,26 @@ fn test_rep() {
     exports.insert(0, export_dev_0);
     let context = Context::new(0, Default::default(), Default::default(), exports);
     // Rep should build upon previous state.
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(14, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(14, result);
 }
 
 #[test]
 // Branch should support domain restriction, thus affecting the structure of exports
 fn test_branch() {
     // Program: rep(0) { x => branch(x % 2 == 0)(7)(rep(4)(_ => 4)); x + 1 }
-    let program = |vm| {
+    let program = |vm: &mut RoundVM| {
         rep(
             vm,
-            |vm| (vm, 0),
+            |_vm| 0,
             |vm1, x| {
-                let res = branch(
+                branch(
                     vm1,
                     || x % 2 == 0,
-                    |vm3| (vm3, 7),
-                    |vm4| (rep(vm4, |vm| (vm, 4), |vm5, _| (vm5, 4))),
+                    |_vm3| 7,
+                    |vm4| rep(vm4, |_vm| 4, |_vm5, _| 4),
                 );
-                return (res.0, x + 1);
+                x + 1
             },
         )
     };
@@ -306,16 +311,16 @@ fn test_branch() {
         Default::default(),
         Default::default(),
     );
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(1, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(1, result);
 
     // Export: Map(0 -> Export(Rep(0) -> 1))
     let export_dev_0 = export!((path!(Rep(0)), 1));
     let mut exports: HashMap<i32, Export> = HashMap::new();
     exports.insert(0, export_dev_0);
     let context = Context::new(0, Default::default(), Default::default(), exports);
-    let result = round(init_with_ctx(context), program);
-    assert_eq!(2, result.1);
+    let result = round(&mut init_with_ctx(context), program);
+    assert_eq!(2, result);
 }
 
 #[test]
@@ -333,15 +338,13 @@ fn test_sense() {
         )
     }
 
-    let (_, res) = round(init_with_ctx(ctx()), |vm| {
-        let val = vm.local_sense::<i32>(&sensor("a")).unwrap().clone();
-        (vm, val)
+    let res = round(&mut init_with_ctx(ctx()), |vm| {
+        vm.local_sense::<i32>(&sensor("a")).unwrap().clone()
     });
     assert_eq!(7, res);
 
-    let (_, res) = round(init_with_ctx(ctx()), |vm| {
-        let val = vm.local_sense::<&str>(&sensor("b")).cloned().unwrap();
-        (vm, val.to_string())
+    let res = round(&mut init_with_ctx(ctx()), |vm| {
+        vm.local_sense::<&str>(&sensor("b")).cloned().unwrap().to_string()
     });
     assert_eq!("right", res);
 }

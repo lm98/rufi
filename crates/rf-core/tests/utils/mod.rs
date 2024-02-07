@@ -42,16 +42,16 @@ pub fn vm(
     let context = Context::new(self_id, local_sensor, nbr_sensor, exports);
     init_with_ctx(context)
 }
-pub fn combine<A, F, G, H>(expr1: F, expr2: G, comb: H) -> impl Fn(RoundVM) -> (RoundVM, A)
+pub fn combine<A, F, G, H>(expr1: F, expr2: G, comb: H) -> impl Fn(&mut RoundVM) -> A
 where
-    F: Fn(RoundVM) -> (RoundVM, A),
-    G: Fn(RoundVM) -> (RoundVM, A),
+    F: Fn(&mut RoundVM) -> A,
+    G: Fn(&mut RoundVM) -> A,
     H: Fn(A, A) -> A,
 {
     move |vm| {
-        let (vm_, res1) = expr1(vm);
-        let (vm__, res2) = expr2(vm_);
-        (vm__, comb(res1, res2))
+        let res1 = expr1(vm);
+        let res2 = expr2(vm);
+        comb(res1, res2)
     }
 }
 
@@ -62,11 +62,11 @@ pub fn assert_equivalence<A, F, G>(
     program_2: G,
 ) -> bool
 where
-    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
-    G: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    F: Fn(&mut RoundVM) -> A + Copy,
+    G: Fn(&mut RoundVM) -> A + Copy,
     A: Eq + Clone + 'static + Debug + FromStr,
 {
-    let states: HashMap<i32, (RoundVM, RoundVM)> = nbrs
+    let states = nbrs
         .iter()
         .map(|(curr, neighbors)| {
             let ex_1: HashMap<i32, Export> = neighbors
@@ -96,8 +96,8 @@ fn assert_equivalence_rec<A, F, G>(
     program_2: G,
 ) -> bool
 where
-    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
-    G: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    F: Fn(&mut RoundVM) -> A + Copy,
+    G: Fn(&mut RoundVM) -> A + Copy,
     A: Eq + Clone + 'static + Debug + FromStr,
 {
     if exec_order.is_empty() {
@@ -106,16 +106,16 @@ where
 
     let curr = exec_order.pop().unwrap();
 
-    let new_states: HashMap<i32, (RoundVM, RoundVM)> = states
+    let new_states = states
         .into_iter()
-        .map(|(id, (vm_1, vm_2))| {
+        .map(|(id, (mut vm_1, mut vm_2))| {
             if id == curr {
-                let (vm_1_, res_1) = round(vm_1, program_1);
-                let (vm_2_, res_2) = round(vm_2, program_2);
+                let res_1 = round(&mut vm_1, program_1);
+                let res_2 = round(&mut vm_2, program_2);
                 if res_1 != res_2 {
                     panic!("Programs are not equivalent: {:?} != {:?}", res_1, res_2);
                 }
-                (id, (vm_1_, vm_2_))
+                (id, (vm_1, vm_2))
             } else {
                 (id, (vm_1, vm_2))
             }
