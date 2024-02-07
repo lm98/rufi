@@ -166,16 +166,15 @@ impl RoundVM {
     /// # Returns
     ///
     /// The result of the closure `expr`.
-    pub fn locally<A: Clone + 'static + FromStr, F>(&mut self, expr: F) -> (RoundVM, A)
+    pub fn locally<A: Clone + 'static + FromStr, F>(&mut self, expr: F) -> A
     where
-        F: Fn(RoundVM) -> (RoundVM, A),
+        F: Fn(&mut RoundVM) -> A,
     {
-        let mut proxy = self.clone();
-        let current_neighbour = *proxy.neighbor();
-        proxy.status.fold_out();
-        let (mut vm_, result) = expr(proxy.clone());
-        vm_.status.fold_into(current_neighbour);
-        (vm_, result)
+        let current_neighbour = *self.neighbor();
+        self.status.fold_out();
+        let result = expr(self);
+        self.status.fold_into(current_neighbour);
+        result
     }
 
     /// Perform a folded evaluation of the given expression in the given neighbor and return the result.
@@ -193,16 +192,15 @@ impl RoundVM {
     /// # Returns
     ///
     /// An `Option` containing the result of the expression.
-    pub fn folded_eval<A: Clone + 'static, F>(&mut self, expr: F, id: i32) -> (RoundVM, Option<A>)
+    pub fn folded_eval<A: Clone + 'static, F>(&mut self, expr: F, id: i32) -> Option<A>
     where
-        F: Fn(RoundVM) -> (RoundVM, A),
+        F: Fn(&mut RoundVM) -> A,
     {
-        let mut proxy = self.clone();
-        proxy.status.push();
-        proxy.status.fold_into(Some(id));
-        let (mut vm_, result) = expr(proxy.clone());
-        vm_.status.pop();
-        (vm_, Some(result))
+        self.status.push();
+        self.status.fold_into(Some(id));
+        let result = expr(self);
+        self.status.pop();
+        Some(result)
     }
 
     /// Evaluate the given expression while also writing on the [Export] stack.
@@ -228,20 +226,19 @@ impl RoundVM {
         write: bool,
         inc: bool,
         expr: F,
-    ) -> (RoundVM, A)
+    ) -> A
     where
-        F: Fn(RoundVM) -> (RoundVM, A),
+        F: Fn(&mut RoundVM) -> A,
     {
-        let mut proxy = self.clone();
-        proxy.status.push();
-        proxy.status.nest(slot);
-        let (mut vm, val) = expr(proxy);
+        self.status.push();
+        self.status.nest(slot);
+        let val = expr(self);
         let res = if write {
-            let cloned_path = vm.status.path().clone();
-            vm.export_data()
+            let cloned_path = self.status.path().clone();
+            self.export_data()
                 .get::<A>(&cloned_path)
                 .unwrap_or(
-                    vm.export_data()
+                    self.export_data()
                         .put_lazy_and_return(cloned_path, || val.clone()),
                 )
                 .clone()
@@ -249,12 +246,12 @@ impl RoundVM {
             val
         };
         if inc {
-            vm.status.pop();
-            vm.status.inc_index();
+            self.status.pop();
+            self.status.inc_index();
         } else {
-            vm.status.pop();
+            self.status.pop();
         }
-        (vm, res)
+        res
     }
 
     /// Get a vector of aligned neighbor identifiers.
@@ -295,16 +292,15 @@ impl RoundVM {
     /// # Returns
     ///
     /// The result of the closure `expr`.
-    pub fn isolate<A, F>(&mut self, expr: F) -> (RoundVM, A)
+    pub fn isolate<A, F>(&mut self, expr: F) -> A
     where
-        F: Fn(RoundVM) -> (RoundVM, A),
+        F: Fn(&mut RoundVM) -> A,
     {
-        let mut proxy = self.clone();
-        let was_isolated = proxy.isolated;
-        proxy.isolated = true;
-        let (mut vm_, result) = expr(proxy.clone());
-        vm_.isolated = was_isolated;
-        (vm_, result)
+        let was_isolated = self.isolated;
+        self.isolated = true;
+        let result = expr(self);
+        self.isolated = was_isolated;
+        result
     }
 
     /// Check if folding is not being performed on neighbor.
@@ -384,8 +380,8 @@ mod tests {
         vm
     }
 
-    fn expr(vm: RoundVM) -> (RoundVM, i32) {
-        (vm, 5 * 3)
+    fn expr(vm: &mut RoundVM) -> i32 {
+        5 * 3
     }
 
     #[test]
@@ -406,7 +402,7 @@ mod tests {
         let mut vm = round_vm_builder();
         let result = vm.folded_eval(expr, 7);
         assert_eq!(round_vm_builder().status, vm.status);
-        assert_eq!(result.1.unwrap(), 15)
+        assert_eq!(result.unwrap(), 15)
     }
 
     #[test]
@@ -455,9 +451,9 @@ mod tests {
     fn test_isolate() {
         let mut vm = round_vm_builder();
         let was_isolated = vm.isolated.clone();
-        let result = vm.isolate(|vm| (vm, 5 * 3));
+        let result = vm.isolate(|vm| 5 * 3);
         assert_eq!(vm.isolated, was_isolated);
-        assert_eq!(result.1, 15)
+        assert_eq!(result, 15)
     }
 
     #[test]

@@ -9,30 +9,33 @@ use rf_core::sensor_id::{sensor, SensorId};
 use rf_core::slot::Slot::{FoldHood, Nbr, Rep};
 use rf_core::vm::round_vm::RoundVM;
 use rf_core::{export, path};
-use rf_core::{foldhood_plus, lift};
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
 use std::iter;
 use std::rc::Rc;
 use std::str::FromStr;
 
-pub fn gradient(vm: RoundVM) -> (RoundVM, f64) {
-    fn is_source(vm: RoundVM) -> (RoundVM, bool) {
-        let val = vm.local_sense::<bool>(&sensor("source")).unwrap().clone();
-        (vm, val)
+pub fn gradient(vm: &mut RoundVM) -> f64 {
+    fn is_source(vm: &mut RoundVM) -> bool {
+        vm.local_sense::<bool>(&sensor("source")).unwrap().clone()
     }
 
-    rep(vm, lift!(f64::INFINITY), |vm1, d| {
-        mux(
-            vm1,
-            is_source,
-            lift!(0.0),
-            foldhood_plus!(lift!(f64::INFINITY), |a, b| a.min(b), |vm2| {
-                let (vm_, val) = nbr(vm2, lift!(d));
-                (vm_, val + 1.0)
-            }),
-        )
-    })
+    rep(
+        vm,
+        |_| 0.0,
+        |vm1, d| {
+            mux(vm1, is_source, |_vm| 0.0, |vm2| {
+                foldhood_plus(
+                    vm2,
+                    |_vm| f64::INFINITY,
+                    |a, b| a.min(b),
+                    |vm3| {
+                        nbr(vm3, |_vm| d) + 1.0
+                    },
+                )
+            })
+        }
+    )
 }
 
 fn setup_test_topology(devices: Vec<i32>) -> Topology {
@@ -84,7 +87,7 @@ fn add_source(topology: &mut Topology, source: i32) {
 
 fn run_on_device<A, F: Copy>(program: F, mut topology: Topology, d: i32) -> Topology
 where
-    F: Fn(RoundVM) -> (RoundVM, A),
+    F: Fn(&mut RoundVM) -> A,
     A: Clone + 'static + FromStr,
 {
     // Setup the VM
@@ -93,11 +96,11 @@ where
     let mut vm = RoundVM::new(ctx);
     vm.new_export_stack();
     // Run the program
-    let (mut vm_, _res) = round(vm, program);
-    println!("{}: {}", d, vm_.export_data().to_string());
+    let _res = round(&mut vm, program);
+    println!("{}: {}", d, vm.export_data().to_string());
     // Update the topology with the new exports
     let mut to_update = topology.states.get(&d).unwrap().clone();
-    to_update.update_exports(d, vm_.export_data().clone());
+    to_update.update_exports(d, vm.export_data().clone());
     // Update the exports of the neighbors, simulating the message passing
     to_update
         .nbr_sensor
@@ -115,7 +118,7 @@ where
 
 fn run_on_topology<A, F>(program: F, mut topology: Topology, scheduling: &Vec<i32>) -> Topology
 where
-    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    F:Fn(&mut RoundVM) -> A + Copy,
     A: Clone + 'static + FromStr,
 {
     // For each device in the provided scheduling, run the program on the device.

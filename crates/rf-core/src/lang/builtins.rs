@@ -13,19 +13,19 @@ use std::str::FromStr;
 ///
 /// # Returns
 /// The result of the evaluation of the then-expression if the condition is true, else the result of the evaluation of the else-expression alongside the RoundVM.
-pub fn mux<A, C, TH, EL>(vm: RoundVM, cond: C, th: TH, el: EL) -> (RoundVM, A)
+pub fn mux<A, C, TH, EL>(vm: &mut RoundVM, cond: C, th: TH, el: EL) -> A
 where
-    C: Fn(RoundVM) -> (RoundVM, bool),
-    TH: Fn(RoundVM) -> (RoundVM, A),
-    EL: Fn(RoundVM) -> (RoundVM, A),
+    C: Fn(&mut RoundVM) -> bool,
+    TH: Fn(&mut RoundVM) -> A,
+    EL: Fn(&mut RoundVM) -> A,
 {
-    let (vm_, flag) = cond(vm);
-    let (th_vm, th_val) = th(vm_);
-    let (el_vm, el_val) = el(th_vm);
+    let flag = cond(vm);
+    let th_val = th(vm);
+    let el_val = el(vm);
     if flag {
-        (el_vm, th_val)
+        th_val
     } else {
-        (el_vm, el_val)
+        el_val
     }
 }
 
@@ -49,19 +49,19 @@ where
 ///
 /// the aggregated value
 pub fn foldhood_plus<A: Copy + 'static + FromStr, F, G, H>(
-    vm: RoundVM,
+    vm: &mut RoundVM,
     init: F,
     aggr: G,
     expr: H,
-) -> (RoundVM, A)
+) -> A
 where
-    F: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    F: Fn(&mut RoundVM) -> A + Copy,
     G: Fn(A, A) -> A,
-    H: Fn(RoundVM) -> (RoundVM, A) + Copy,
+    H: Fn(&mut RoundVM) -> A + Copy,
 {
     foldhood(vm, init, aggr, |vm1| {
-        let (vm_, self_id) = mid(vm1);
-        let (vm__, nbr_id) = nbr(vm_, mid);
-        mux(vm__, |vm3| (vm3, self_id == nbr_id), init, expr)
+        let self_id = mid(vm1);
+        let nbr_id = nbr(vm1, mid);
+        mux(vm1, |_vm2| self_id == nbr_id, init, expr)
     })
 }
