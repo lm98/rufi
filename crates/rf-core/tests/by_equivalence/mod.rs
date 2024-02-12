@@ -44,11 +44,7 @@ fn foldhood_multiple_nbrs() {
             vm,
             |_vm| 0,
             |a, b| a + b,
-            |vm| {
-                nbr(vm, |vm| {
-                    1 + 2 + mid(vm)
-                })
-            },
+            |vm| nbr(vm, |vm| 1 + 2 + mid(vm)),
         )
     };
 
@@ -73,9 +69,7 @@ fn nbr_nbr_ignored() {
         )
     };
 
-    let program_2 = |vm: &mut RoundVM| {
-        2 * foldhood(vm, |_vm| 0, |a, b| a + b, |vm| nbr(vm, mid))
-    };
+    let program_2 = |vm: &mut RoundVM| 2 * foldhood(vm, |_vm| 0, |a, b| a + b, |vm| nbr(vm, mid));
 
     assert_equivalence(fixture.exec_order, fixture.nbrs, program_1, program_2);
 }
@@ -92,14 +86,8 @@ fn rep_nbr_ignored_first_argument() {
         )
     };
 
-    let program_2 = |vm: &mut RoundVM| {
-        foldhood(
-            vm,
-            |_vm| 0,
-            |a, b| a + b,
-            |vm| rep(vm, mid, |_vm, a| a),
-        )
-    };
+    let program_2 =
+        |vm: &mut RoundVM| foldhood(vm, |_vm| 0, |a, b| a + b, |vm| rep(vm, mid, |_vm, a| a));
 
     assert_equivalence(fixture.exec_order, fixture.nbrs, program_1, program_2);
 }

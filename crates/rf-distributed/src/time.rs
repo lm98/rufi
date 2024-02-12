@@ -1,5 +1,5 @@
-use std::time::Duration;
 use async_trait::async_trait;
+use std::time::Duration;
 
 /// This trait deals with time operations
 #[async_trait]

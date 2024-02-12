@@ -362,14 +362,8 @@ mod tests {
             HashMap::from([(0, Rc::new(Box::new(4) as Box<dyn Any>))]),
         )]);
         let exports = HashMap::from([
-            (
-                7,
-                export!((path!(Nbr(0), Rep(0)), 10)),
-            ),
-            (
-                0,
-                export!((path!(Nbr(0), Rep(0)), 2)),
-            ),
+            (7, export!((path!(Nbr(0), Rep(0)), 10))),
+            (0, export!((path!(Nbr(0), Rep(0)), 2))),
         ]);
 
         let context = Context::new(7, local_sensor, nbr_sensor, exports);

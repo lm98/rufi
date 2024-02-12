@@ -116,10 +116,7 @@ fn export_should_compose() {
     assert_eq!(16, vm1.export_data().root::<i32>().clone());
 
     let mut vm2 = init_with_ctx(ctx());
-    let _ = round(
-        &mut vm2,
-        combine(expr_3, expr_3.clone(), |a, b| a + b),
-    );
+    let _ = round(&mut vm2, combine(expr_3, expr_3.clone(), |a, b| a + b));
     assert_eq!(10, vm2.export_data().root::<i32>().clone());
 
     let mut vm3 = init_vm();
@@ -189,14 +186,8 @@ fn test_foldhood_advanced() {
     exports.insert(4, export_dev_4);
     let context = Context::new(0, Default::default(), Default::default(), exports);
     // Program: foldhood(-5)(_ + _)(nbr(2))
-    let program = |vm: &mut RoundVM| {
-        foldhood(
-            vm,
-            |_vm| -5,
-            |a, b| (a + b),
-            |vm1| nbr(vm1, |_vm2| 2),
-        )
-    };
+    let program =
+        |vm: &mut RoundVM| foldhood(vm, |_vm| -5, |a, b| (a + b), |vm1| nbr(vm1, |_vm2| 2));
     let result = round(&mut init_with_ctx(context), program);
     assert_eq!(20, result);
 }
@@ -344,7 +335,10 @@ fn test_sense() {
     assert_eq!(7, res);
 
     let res = round(&mut init_with_ctx(ctx()), |vm| {
-        vm.local_sense::<&str>(&sensor("b")).cloned().unwrap().to_string()
+        vm.local_sense::<&str>(&sensor("b"))
+            .cloned()
+            .unwrap()
+            .to_string()
     });
     assert_eq!("right", res);
 }
