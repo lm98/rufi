@@ -10,6 +10,9 @@ use rf_core::vm::round_vm::RoundVM;
 use std::error::Error;
 use std::fmt::Display;
 use std::str::FromStr;
+use std::time::Duration;
+use bytes::Bytes;
+use crate::time::Time;
 
 /// This struct represents the platform on which the program is executed
 pub struct RuFiPlatform<M, N, D, S>
@@ -160,14 +163,33 @@ where
 
     //STEP 5: Publish the export
     let msg = Message::new(*vm.self_id(), self_export, std::time::SystemTime::now());
-    let msg_ser = serde_json::to_string(&msg).unwrap();
-    network.send(*vm.self_id(), msg_ser).await?;
+    if let Ok(msg_ser) = serde_json::to_vec(&msg) {
+        network.send(*vm.self_id(), Bytes::from(msg_ser)).await?;
+    } else {
+        println!("Error while serializing the message");
+    }
 
     //STEP 6: Receive the neighbouring exports from the network
-    if let Ok(NetworkUpdate::Update { msg }) = network.receive().await {
-        if let Ok(msg) = serde_json::from_str(&msg) {
-            mailbox.enqueue(msg);
+    match network.receive().await {
+        Ok(NetworkUpdate::Update { msg }) => {
+            if let Ok(msg) = serde_json::from_slice(&msg) {
+                mailbox.enqueue(msg);
+                Ok(())
+            } else {
+                Err("Error deserializing the message".into())
+            }
+        }
+        Ok(NetworkUpdate::None) => {
+            println!("No message received from the network");
+            Ok(())
+        }
+        Ok(NetworkUpdate::Err { reason }) => {
+            println!("Error receiving from the network: {}", reason);
+            Err(reason.into())
+        }
+        _ => {
+            println!("Error receiving from the network");
+            Err("Error receiving from the network".into())
         }
     }
-    Ok(())
 }

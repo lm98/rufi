@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 pub mod asynchronous;
 pub mod sync;
 
@@ -9,5 +11,7 @@ pub enum NetworkUpdate {
     /// No message received
     None,
     /// A message has been received
-    Update { msg: String },
+    Update { msg: Bytes },
+    /// An error occurred
+    Err { reason: String },
 }
