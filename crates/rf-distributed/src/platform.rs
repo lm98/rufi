@@ -25,19 +25,21 @@ impl PlatformFactory {
         sync::SyncRuFiPlatform::new(mailbox, network, context, discovery, setup)
     }
 
-    pub fn async_platform<M, N, D, S>(
+    pub fn async_platform<M, N, D, S, T>(
         mailbox: M,
         network: N,
         context: Context,
         discovery: D,
         setup: S,
-    ) -> asynchronous::RuFiPlatform<M, N, D, S>
+        time: T,
+    ) -> asynchronous::RuFiPlatform<M, N, D, S, T>
     where
         M: Mailbox,
         N: crate::network::asynchronous::Network,
         D: Discovery,
         S: NbrSensorSetup,
+        T: crate::time::Time,
     {
-        asynchronous::RuFiPlatform::new(mailbox, network, context, discovery, setup)
+        asynchronous::RuFiPlatform::new(mailbox, network, context, discovery, setup, time)
     }
 }

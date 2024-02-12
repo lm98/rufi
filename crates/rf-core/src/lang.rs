@@ -155,7 +155,7 @@ where
         Branch(vm.index()),
         vm.unless_folding_on_others(),
         true,
-        |mut vm| {
+        |vm| {
             let tag = vm.locally(|_vm1| cond());
             let val: A = match vm.neighbor() {
                 Some(nbr) if nbr != vm.self_id() => {
