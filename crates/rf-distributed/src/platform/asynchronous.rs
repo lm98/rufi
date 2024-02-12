@@ -15,12 +15,13 @@ use bytes::Bytes;
 use crate::time::Time;
 
 /// This struct represents the platform on which the program is executed
-pub struct RuFiPlatform<M, N, D, S>
+pub struct RuFiPlatform<M, N, D, S, T>
 where
     M: Mailbox,
     N: Network,
     D: Discovery,
     S: NbrSensorSetup,
+    T: Time,
 {
     mailbox: M,
     network: N,
@@ -28,17 +29,19 @@ where
     discovery: D,
     discovered_nbrs: Vec<i32>,
     nbr_sensor_setup: S,
+    time: T
 }
 
-impl<M, N, D, S> RuFiPlatform<M, N, D, S>
+impl<M, N, D, S, T> RuFiPlatform<M, N, D, S, T>
 where
     M: Mailbox,
     N: Network,
     D: Discovery,
     S: NbrSensorSetup,
+    T: Time,
 {
     /// Creates a new platform
-    pub fn new(mailbox: M, network: N, context: Context, discovery: D, setup: S) -> Self {
+    pub fn new(mailbox: M, network: N, context: Context, discovery: D, setup: S, time: T) -> Self {
         RuFiPlatform {
             mailbox,
             network,
@@ -46,6 +49,7 @@ where
             discovery,
             discovered_nbrs: vec![],
             nbr_sensor_setup: setup,
+            time,
         }
     }
 
@@ -66,15 +70,16 @@ where
     {
         loop {
             self.pre_cycle();
-
             single_cycle(
                 &mut self.mailbox,
                 &mut self.network,
                 &self.nbr_sensor_setup,
                 self.context.clone(),
                 program,
-            )
-            .await?;
+            ).await?;
+            println!("Cycle ended, starting a new cycle");
+            //sleep for one sec
+            self.time.sleep(Duration::from_secs(1)).await
         }
     }
 
@@ -92,8 +97,7 @@ where
                 &self.nbr_sensor_setup,
                 self.context.clone(),
                 program,
-            )
-            .await?;
+            ).await?;
         }
         Ok(())
     }

@@ -11,6 +11,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
+use rufi::distributed::impls::time::TimeImpl;
 
 #[derive(Debug, Default)]
 struct Arguments {
@@ -63,6 +64,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "dhat-heap")]
     let _profiler = dhat::Profiler::new_heap();
 
+    env_logger::init();
+
     // Get arguments from the CLI
     let args = Arguments::parse(std::env::args().skip(1))?;
     let self_id = args.id;
@@ -98,8 +101,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup the mailbox
     let mailbox = MailboxFactory::memory_less();
 
+    let time = TimeImpl::new();
     // Setup the platform and run the program
-    PlatformFactory::async_platform(mailbox, network, context, discovery, setup)
-        .run_n_cycles(gradient, 50)
+    PlatformFactory::async_platform(mailbox, network?, context, discovery, setup, time)
+        .run_forever(gradient)
         .await
 }
