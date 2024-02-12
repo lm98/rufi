@@ -128,12 +128,15 @@ where
 
     //STEP 5: Publish the export
     let msg = Message::new(*vm.self_id(), self_export, std::time::SystemTime::now());
-    let msg_ser = serde_json::to_string(&msg).unwrap();
-    network.send(*vm.self_id(), msg_ser)?;
+    if let Ok(msg) = serde_json::to_string(&msg) {
+        network.send(*vm.self_id(), msg.into())?;
+    } else {
+        println!("Could not serialize the message");
+    }
 
     //STEP 6: Receive the neighbouring exports from the network
     if let Ok(NetworkUpdate::Update { msg }) = network.receive() {
-        if let Ok(msg) = serde_json::from_str(&msg) {
+        if let Ok(msg) = serde_json::from_slice(&msg) {
             mailbox.enqueue(msg);
         }
     }
