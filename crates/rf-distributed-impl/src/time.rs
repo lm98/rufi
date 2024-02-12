@@ -1,6 +1,6 @@
-use std::time::Duration;
 use async_trait::async_trait;
 use rf_distributed::time::Time;
+use std::time::Duration;
 
 pub struct TimeImpl;
 

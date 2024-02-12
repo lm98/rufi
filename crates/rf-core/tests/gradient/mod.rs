@@ -24,17 +24,20 @@ pub fn gradient(vm: &mut RoundVM) -> f64 {
         vm,
         |_| 0.0,
         |vm1, d| {
-            mux(vm1, is_source, |_vm| 0.0, |vm2| {
-                foldhood_plus(
-                    vm2,
-                    |_vm| f64::INFINITY,
-                    |a, b| a.min(b),
-                    |vm3| {
-                        nbr(vm3, |_vm| d) + 1.0
-                    },
-                )
-            })
-        }
+            mux(
+                vm1,
+                is_source,
+                |_vm| 0.0,
+                |vm2| {
+                    foldhood_plus(
+                        vm2,
+                        |_vm| f64::INFINITY,
+                        |a, b| a.min(b),
+                        |vm3| nbr(vm3, |_vm| d) + 1.0,
+                    )
+                },
+            )
+        },
     )
 }
 
@@ -118,7 +121,7 @@ where
 
 fn run_on_topology<A, F>(program: F, mut topology: Topology, scheduling: &Vec<i32>) -> Topology
 where
-    F:Fn(&mut RoundVM) -> A + Copy,
+    F: Fn(&mut RoundVM) -> A + Copy,
     A: Clone + 'static + FromStr,
 {
     // For each device in the provided scheduling, run the program on the device.

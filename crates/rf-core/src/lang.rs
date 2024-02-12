@@ -158,9 +158,7 @@ where
         |vm| {
             let tag = vm.locally(|_vm1| cond());
             let val: A = match vm.neighbor() {
-                Some(nbr) if nbr != vm.self_id() => {
-                    vm.neighbor_val::<A>().unwrap()
-                }
+                Some(nbr) if nbr != vm.self_id() => vm.neighbor_val::<A>().unwrap(),
                 _ => {
                     if tag {
                         vm.locally(thn)

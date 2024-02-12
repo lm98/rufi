@@ -62,9 +62,9 @@ where
     }
 
     pub fn run_n_cycles<P, A>(mut self, program: P, n: usize) -> Result<(), Box<dyn Error>>
-        where
-            P: Fn(&mut RoundVM) -> A + Copy,
-            A: Clone + 'static + FromStr + Display,
+    where
+        P: Fn(&mut RoundVM) -> A + Copy,
+        A: Clone + 'static + FromStr + Display,
     {
         for _ in 0..n {
             self.pre_cycle();

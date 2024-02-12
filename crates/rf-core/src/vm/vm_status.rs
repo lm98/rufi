@@ -83,7 +83,8 @@ impl VMStatus {
 
     /// Push the current status on the stack.
     pub fn push(&mut self) {
-        self.stack.push_front((self.path.clone(), self.index, self.neighbour));
+        self.stack
+            .push_front((self.path.clone(), self.index, self.neighbour));
     }
 
     /// Pop the current status from the stack.

@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
 use crate::slot::Slot;
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::fmt::{Display, Formatter};
 
 /// A Path is a collection of Slots that behave like an immutable stack
@@ -25,7 +25,9 @@ impl Path {
     ///
     /// A new Path
     pub fn new() -> Self {
-        Self { slots: vec![].into() }
+        Self {
+            slots: vec![].into(),
+        }
     }
 
     /// Push a Slot into the Path

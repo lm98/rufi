@@ -3,6 +3,8 @@ use crate::discovery::Discovery;
 use crate::mailbox::{AsStates, Mailbox};
 use crate::message::Message;
 use crate::network::{asynchronous::Network, NetworkUpdate};
+use crate::time::Time;
+use bytes::Bytes;
 use rf_core::context::Context;
 use rf_core::export::Export;
 use rf_core::lang::execution::round;
@@ -11,8 +13,6 @@ use std::error::Error;
 use std::fmt::Display;
 use std::str::FromStr;
 use std::time::Duration;
-use bytes::Bytes;
-use crate::time::Time;
 
 /// This struct represents the platform on which the program is executed
 pub struct RuFiPlatform<M, N, D, S, T>
@@ -29,7 +29,7 @@ where
     discovery: D,
     discovered_nbrs: Vec<i32>,
     nbr_sensor_setup: S,
-    time: T
+    time: T,
 }
 
 impl<M, N, D, S, T> RuFiPlatform<M, N, D, S, T>
@@ -76,7 +76,8 @@ where
                 &self.nbr_sensor_setup,
                 self.context.clone(),
                 program,
-            ).await?;
+            )
+            .await?;
             println!("Cycle ended, starting a new cycle");
             //sleep for one sec
             self.time.sleep(Duration::from_secs(1)).await
@@ -97,7 +98,8 @@ where
                 &self.nbr_sensor_setup,
                 self.context.clone(),
                 program,
-            ).await?;
+            )
+            .await?;
         }
         Ok(())
     }

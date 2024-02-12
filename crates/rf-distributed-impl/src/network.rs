@@ -1,10 +1,10 @@
-use std::error::Error;
 use async_trait::async_trait;
 use bytes::Bytes;
+use log::info;
 use rf_distributed::network::{asynchronous::Network, NetworkResult, NetworkUpdate};
 use rumqttc::{AsyncClient, Event::Incoming, MqttOptions, QoS};
-use tokio::sync::mpsc::Receiver;
-use log::info;
+use std::error::Error;
+use tokio::sync::mpsc::{channel, Receiver};
 
 /// This struct represent the network that will be used to send and receive messages
 /// using the MQTT protocol.
@@ -14,33 +14,47 @@ pub struct AsyncMQTTNetwork {
 }
 
 impl AsyncMQTTNetwork {
-    pub async fn new(options: MqttOptions, topics: Vec<i32>, mqtt_channel_cap: usize, network_buffer_size: usize) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(
+        options: MqttOptions,
+        topics: Vec<i32>,
+        mqtt_channel_cap: usize,
+        network_buffer_size: usize,
+    ) -> Result<Self, Box<dyn Error>> {
         let (client, mut eventloop) = AsyncClient::new(options, mqtt_channel_cap);
-        AsyncMQTTNetwork::subscribe_to_topics(client.clone(), topics)
-            .await?;
-        let (sender, receiver) = tokio::sync::mpsc::channel::<NetworkUpdate>(network_buffer_size);
+        AsyncMQTTNetwork::subscribe_to_topics(client.clone(), topics).await?;
+        let (sender, receiver) = channel::<NetworkUpdate>(network_buffer_size);
         tokio::spawn(async move {
             loop {
                 match eventloop.poll().await {
-                    Ok(notification) => {
-                        match notification {
-                            Incoming(rumqttc::Packet::Publish(msg)) => {
-                                if let Err(send_error) = sender
-                                    .send(NetworkUpdate::Update { msg: msg.payload })
-                                    .await {
-                                    info!("Error sending message to receiver: {:?}", send_error.to_string());
-                                }
-                            }
-                            Incoming(rumqttc::Packet::Disconnect) => {
-                                sender.send(NetworkUpdate::Err { reason: "Disconnected".to_string() }).await.unwrap();
-                            }
-                            _ => {
-
+                    Ok(notification) => match notification {
+                        Incoming(rumqttc::Packet::Publish(msg)) => {
+                            if let Err(send_error) = sender
+                                .send(NetworkUpdate::Update { msg: msg.payload })
+                                .await
+                            {
+                                info!(
+                                    "Error sending message to receiver: {:?}",
+                                    send_error.to_string()
+                                );
                             }
                         }
-                    }
+                        Incoming(rumqttc::Packet::Disconnect) => {
+                            sender
+                                .send(NetworkUpdate::Err {
+                                    reason: "Disconnected".to_string(),
+                                })
+                                .await
+                                .unwrap();
+                        }
+                        _ => {}
+                    },
                     Err(e) => {
-                        if let Err(e2) = sender.send(NetworkUpdate::Err { reason: e.to_string() }).await {
+                        if let Err(e2) = sender
+                            .send(NetworkUpdate::Err {
+                                reason: e.to_string(),
+                            })
+                            .await
+                        {
                             info!("Error: {:?}", e2.to_string());
                         }
                     }
@@ -54,7 +68,8 @@ impl AsyncMQTTNetwork {
         for nbr in topics.clone() {
             if let Err(e) = client
                 .subscribe(format!("hello-rufi/{nbr}/subscriptions"), QoS::AtMostOnce)
-                .await {
+                .await
+            {
                 return Err(e.into());
             }
         }
@@ -71,7 +86,8 @@ impl Network for AsyncMQTTNetwork {
                 QoS::AtMostOnce,
                 false,
                 msg,
-            ).map_err(|e| e.into())
+            )
+            .map_err(|e| e.into())
     }
 
     async fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
