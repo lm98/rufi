@@ -168,7 +168,9 @@ where
     //STEP 5: Publish the export
     let msg = Message::new(*vm.self_id(), self_export, std::time::SystemTime::now());
     if let Ok(msg_ser) = serde_json::to_vec(&msg) {
-        network.send(*vm.self_id(), Bytes::from(msg_ser)).await?;
+        if let Err(e) = network.send(*vm.self_id(), Bytes::from(msg_ser)).await {
+            println!("Error sending the message: {}", e);
+        }
     } else {
         println!("Error while serializing the message");
     }
