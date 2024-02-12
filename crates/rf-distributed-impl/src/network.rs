@@ -2,7 +2,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use bytes::Bytes;
 use rf_distributed::network::{asynchronous::Network, NetworkResult, NetworkUpdate};
-use rumqttc::{AsyncClient, MqttOptions, QoS};
+use rumqttc::{AsyncClient, Event::Incoming, MqttOptions, QoS};
 use tokio::sync::mpsc::Receiver;
 use log::info;
 
@@ -24,12 +24,15 @@ impl AsyncMQTTNetwork {
                 match eventloop.poll().await {
                     Ok(notification) => {
                         match notification {
-                            rumqttc::Event::Incoming(rumqttc::Packet::Publish(msg)) => {
+                            Incoming(rumqttc::Packet::Publish(msg)) => {
                                 if let Err(send_error) = sender
                                     .send(NetworkUpdate::Update { msg: msg.payload })
                                     .await {
                                     info!("Error sending message to receiver: {:?}", send_error.to_string());
                                 }
+                            }
+                            Incoming(rumqttc::Packet::Disconnect) => {
+                                sender.send(NetworkUpdate::Err { reason: "Disconnected".to_string() }).await.unwrap();
                             }
                             _ => {
 
@@ -63,14 +66,12 @@ impl AsyncMQTTNetwork {
 impl Network for AsyncMQTTNetwork {
     async fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()> {
         self.client
-            .publish(
+            .try_publish(
                 format!("hello-rufi/{source}/subscriptions"),
                 QoS::AtMostOnce,
                 false,
                 msg,
-            )
-            .await
-            .map_err(|e| e.into())
+            ).map_err(|e| e.into())
     }
 
     async fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
