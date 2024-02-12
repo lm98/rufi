@@ -1,5 +1,6 @@
 use crate::network::{NetworkResult, NetworkUpdate};
 use async_trait::async_trait;
+use bytes::Bytes;
 
 /// This trait represent a network that will be used to send and receive messages
 #[async_trait]
@@ -15,7 +16,7 @@ pub trait Network {
     ///
     /// * `Ok(())` - If the message has been sent
     /// * `Err(e)` - If an error occurred
-    async fn send(&mut self, source: i32, msg: String) -> NetworkResult<()>;
+    async fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()>;
     /// Receive a message from the network
     ///
     /// # Returns
