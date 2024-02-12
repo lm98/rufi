@@ -4,7 +4,6 @@ use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 use rufi::distributed::discovery::Discovery;
 use rufi::distributed::impls::mailbox::MailboxFactory;
 use rufi::distributed::impls::network::AsyncMQTTNetwork;
-use rufi::distributed::platform::PlatformFactory;
 use rufi::programs::gradient;
 use rumqttc::MqttOptions;
 use std::any::Any;
@@ -12,6 +11,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
 use rufi::distributed::impls::time::TimeImpl;
+use rufi::distributed::platform::asynchronous::RuFiPlatform;
 
 #[derive(Debug, Default)]
 struct Arguments {
@@ -103,7 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let time = TimeImpl::new();
     // Setup the platform and run the program
-    PlatformFactory::async_platform(mailbox, network?, context, discovery, setup, time)
+    RuFiPlatform::new(mailbox, network?, context, discovery, setup, time)
         .run_forever(gradient)
         .await
 }
