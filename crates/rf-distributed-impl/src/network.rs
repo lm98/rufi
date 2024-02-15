@@ -1,36 +1,35 @@
-use async_trait::async_trait;
 use bytes::Bytes;
 use log::info;
-use rf_distributed::network::{asynchronous::Network, NetworkResult, NetworkUpdate};
-use rumqttc::{AsyncClient, Event::Incoming, MqttOptions, QoS};
+use rf_distributed::network::{sync::Network, NetworkResult, NetworkUpdate};
+use rumqttc::{Client, Event::Incoming, MqttOptions, QoS};
 use std::error::Error;
-use tokio::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::{channel, Receiver};
+use std::thread;
+
 
 /// This struct represent the network that will be used to send and receive messages
 /// using the MQTT protocol.
-pub struct AsyncMQTTNetwork {
-    client: AsyncClient,
+pub struct SyncMQTTNetwork {
+    client: Client,
     receiver: Receiver<NetworkUpdate>,
 }
 
-impl AsyncMQTTNetwork {
-    pub async fn new(
+impl SyncMQTTNetwork {
+    pub fn new(
         options: MqttOptions,
         topics: Vec<i32>,
         mqtt_channel_cap: usize,
-        network_buffer_size: usize,
     ) -> Result<Self, Box<dyn Error>> {
-        let (client, mut eventloop) = AsyncClient::new(options, mqtt_channel_cap);
-        AsyncMQTTNetwork::subscribe_to_topics(client.clone(), topics).await?;
-        let (sender, receiver) = channel::<NetworkUpdate>(network_buffer_size);
-        tokio::spawn(async move {
+        let (mut client, mut connection) = Client::new(options, mqtt_channel_cap);
+        SyncMQTTNetwork::subscribe_to_topics(&mut client, topics)?;
+        let (sender, receiver) = channel::<NetworkUpdate>();
+        thread::spawn(move || {
             loop {
-                match eventloop.poll().await {
-                    Ok(notification) => match notification {
-                        Incoming(rumqttc::Packet::Publish(msg)) => {
+                for (_i, notification) in connection.iter().enumerate() {
+                    match notification {
+                        Ok(Incoming(rumqttc::Packet::Publish(msg))) => {
                             if let Err(send_error) = sender
                                 .send(NetworkUpdate::Update { msg: msg.payload })
-                                .await
                             {
                                 info!(
                                     "Error sending message to receiver: {:?}",
@@ -38,25 +37,22 @@ impl AsyncMQTTNetwork {
                                 );
                             }
                         }
-                        Incoming(rumqttc::Packet::Disconnect) => {
+                        Ok(Incoming(rumqttc::Packet::Disconnect)) => {
                             sender
                                 .send(NetworkUpdate::Err {
                                     reason: "Disconnected".to_string(),
+                                }).unwrap_or(()); // Ignore the error
+                        }
+                        Err(e) => {
+                            if let Err(e2) = sender
+                                .send(NetworkUpdate::Err {
+                                    reason: e.to_string(),
                                 })
-                                .await
-                                .unwrap();
+                            {
+                                info!("Error: {:?}", e2.to_string());
+                            }
                         }
                         _ => {}
-                    },
-                    Err(e) => {
-                        if let Err(e2) = sender
-                            .send(NetworkUpdate::Err {
-                                reason: e.to_string(),
-                            })
-                            .await
-                        {
-                            info!("Error: {:?}", e2.to_string());
-                        }
                     }
                 }
             }
@@ -64,11 +60,10 @@ impl AsyncMQTTNetwork {
         Ok(Self { client, receiver })
     }
 
-    async fn subscribe_to_topics(client: AsyncClient, topics: Vec<i32>) -> NetworkResult<()> {
+    fn subscribe_to_topics(client: &mut Client, topics: Vec<i32>) -> NetworkResult<()> {
         for nbr in topics.clone() {
             if let Err(e) = client
                 .subscribe(format!("hello-rufi/{nbr}/subscriptions"), QoS::AtMostOnce)
-                .await
             {
                 return Err(e.into());
             }
@@ -77,9 +72,8 @@ impl AsyncMQTTNetwork {
     }
 }
 
-#[async_trait]
-impl Network for AsyncMQTTNetwork {
-    async fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()> {
+impl Network for SyncMQTTNetwork {
+    fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()> {
         self.client
             .try_publish(
                 format!("hello-rufi/{source}/subscriptions"),
@@ -90,10 +84,9 @@ impl Network for AsyncMQTTNetwork {
             .map_err(|e| e.into())
     }
 
-    async fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
+    fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
         self.receiver
             .recv()
-            .await
-            .ok_or("No message received".into())
+            .map_err(|_e| "No message received".into())
     }
 }

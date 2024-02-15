@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use rf_distributed::time::Time;
 use std::time::Duration;
 
@@ -10,9 +9,8 @@ impl TimeImpl {
     }
 }
 
-#[async_trait]
 impl Time for TimeImpl {
-    async fn sleep(&self, duration: Duration) {
-        tokio::time::sleep(duration).await;
+    fn sleep(&self, duration: Duration) {
+        std::thread::sleep(duration);
     }
 }
