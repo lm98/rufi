@@ -1,17 +1,19 @@
 use bytes::Bytes;
-use log::info;
-use rf_distributed::network::{sync::Network, NetworkResult, NetworkUpdate};
+use rf_distributed::network::{sync::Network, NetworkResult};
 use rumqttc::{Client, Event::Incoming, MqttOptions, QoS};
 use std::error::Error;
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::{Arc, Mutex};
 use std::thread;
+use rf_distributed::mailbox::{Mailbox, Messages};
+use rf_distributed::message::Message;
+use crate::mailbox::MemoryLessMailbox;
 
 
 /// This struct represent the network that will be used to send and receive messages
 /// using the MQTT protocol.
 pub struct SyncMQTTNetwork {
     client: Client,
-    receiver: Receiver<NetworkUpdate>,
+    mb: Arc<Mutex<Vec<Bytes>>>,
 }
 
 impl SyncMQTTNetwork {
@@ -22,34 +24,16 @@ impl SyncMQTTNetwork {
     ) -> Result<Self, Box<dyn Error>> {
         let (mut client, mut connection) = Client::new(options, mqtt_channel_cap);
         SyncMQTTNetwork::subscribe_to_topics(&mut client, topics)?;
-        let (sender, receiver) = channel::<NetworkUpdate>();
+        let mb: Arc<Mutex<Vec<Bytes>>> = Arc::new(Mutex::new(vec![]));
+
+        let mb_clone = Arc::clone(&mb);
         thread::spawn(move || {
             loop {
                 for (_i, notification) in connection.iter().enumerate() {
                     match notification {
                         Ok(Incoming(rumqttc::Packet::Publish(msg))) => {
-                            if let Err(send_error) = sender
-                                .send(NetworkUpdate::Update { msg: msg.payload })
-                            {
-                                info!(
-                                    "Error sending message to receiver: {:?}",
-                                    send_error.to_string()
-                                );
-                            }
-                        }
-                        Ok(Incoming(rumqttc::Packet::Disconnect)) => {
-                            sender
-                                .send(NetworkUpdate::Err {
-                                    reason: "Disconnected".to_string(),
-                                }).unwrap_or(()); // Ignore the error
-                        }
-                        Err(e) => {
-                            if let Err(e2) = sender
-                                .send(NetworkUpdate::Err {
-                                    reason: e.to_string(),
-                                })
-                            {
-                                info!("Error: {:?}", e2.to_string());
+                            if let Ok(mut mb) = mb_clone.lock() {
+                                mb.push(msg.payload);
                             }
                         }
                         _ => {}
@@ -57,7 +41,7 @@ impl SyncMQTTNetwork {
                 }
             }
         });
-        Ok(Self { client, receiver })
+        Ok(Self { client, mb })
     }
 
     fn subscribe_to_topics(client: &mut Client, topics: Vec<i32>) -> NetworkResult<()> {
@@ -84,9 +68,15 @@ impl Network for SyncMQTTNetwork {
             .map_err(|e| e.into())
     }
 
-    fn receive(&mut self) -> NetworkResult<NetworkUpdate> {
-        self.receiver
-            .recv()
-            .map_err(|_e| "No message received".into())
+    fn receive(&mut self) -> Messages {
+        let mut mailbox = MemoryLessMailbox::new();
+
+        for u in self.mb.lock().unwrap().iter() {
+            if let Ok(mex) = serde_json::from_slice::<Message>(u) {
+                mailbox.enqueue(mex)
+            }
+        }
+
+        mailbox.messages()
     }
 }

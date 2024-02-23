@@ -2,7 +2,6 @@ use rufi::core::context::{Context, NbrSensors};
 use rufi::core::sensor_id::{sensor, SensorId};
 use rufi::distributed::discovery::nbr_sensors_setup::NbrSensorSetup;
 use rufi::distributed::discovery::Discovery;
-use rufi::distributed::impls::mailbox::MailboxFactory;
 use rufi::distributed::impls::network::SyncMQTTNetwork;
 use rufi::distributed::impls::time::TimeImpl;
 use rufi::distributed::platform::sync::RuFiPlatform;
@@ -99,15 +98,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         MqttOptions::new(format!("device#{}", self_id), "test.mosquitto.org", 1883);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
     let network = SyncMQTTNetwork::new(mqttoptions, nbrs.clone(), 10);
-    // Setup the mailbox
-    let mailbox = MailboxFactory::memory_less();
 
     let time = TimeImpl::new();
 
-    let debug_hook = |export: &Export| {
+    let debug_hook = |_: &Export| {
         //println!("EXPORT: {:?}\n OUTPUT:{:?}", export, export.root());
     };
     // Setup the platform and run the program
-    RuFiPlatform::new(mailbox, network?, context, discovery, setup, time, vec![debug_hook])
+    RuFiPlatform::new(network?, context, discovery, setup, time, vec![debug_hook])
         .run_forever(gradient)
 }

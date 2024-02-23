@@ -1,8 +1,8 @@
 use crate::discovery::nbr_sensors_setup::NbrSensorSetup;
 use crate::discovery::Discovery;
-use crate::mailbox::{AsStates, Mailbox};
+use crate::mailbox::AsStates;
 use crate::message::Message;
-use crate::network::{sync::Network, NetworkUpdate};
+use crate::network::sync::Network;
 use crate::time::Time;
 use bytes::Bytes;
 use rf_core::context::Context;
@@ -15,16 +15,14 @@ use std::str::FromStr;
 use std::time::Duration;
 
 /// This struct represents the platform on which the program is executed
-pub struct RuFiPlatform<M, N, D, S, T, H>
+pub struct RuFiPlatform<N, D, S, T, H>
     where
-        M: Mailbox,
         N: Network,
         D: Discovery,
         S: NbrSensorSetup,
         T: Time,
         H: Fn(&Export) -> (),
 {
-    mailbox: M,
     network: N,
     context: Context,
     discovery: D,
@@ -34,9 +32,8 @@ pub struct RuFiPlatform<M, N, D, S, T, H>
     hooks: Vec<H>,
 }
 
-impl<M, N, D, S, T, H> RuFiPlatform<M, N, D, S, T, H>
+impl<N, D, S, T, H> RuFiPlatform<N, D, S, T, H>
     where
-        M: Mailbox,
         N: Network,
         D: Discovery,
         S: NbrSensorSetup,
@@ -44,9 +41,8 @@ impl<M, N, D, S, T, H> RuFiPlatform<M, N, D, S, T, H>
         H: Fn(&Export) -> (),
 {
     /// Creates a new platform
-    pub fn new(mailbox: M, network: N, context: Context, discovery: D, setup: S, time: T, hooks: Vec<H>) -> Self {
+    pub fn new(network: N, context: Context, discovery: D, setup: S, time: T, hooks: Vec<H>) -> Self {
         RuFiPlatform {
-            mailbox,
             network,
             context,
             discovery,
@@ -118,7 +114,6 @@ impl<M, N, D, S, T, H> RuFiPlatform<M, N, D, S, T, H>
         where
             P: Fn(&mut RoundVM) -> A,
             A: Clone + 'static + FromStr + Display,
-            M: Mailbox,
             N: Network,
             S: NbrSensorSetup,
     {
@@ -133,7 +128,7 @@ impl<M, N, D, S, T, H> RuFiPlatform<M, N, D, S, T, H>
         self.discovered_nbrs.extend(subscriptions);
 
         //STEP 3: Retrieve the neighbouring exports from the mailbox
-        let states = self.mailbox.messages().as_states();
+        let states = self.network.receive().as_states();
 
         //STEP 4: Execute a round
         let nbr_sensors = self.nbr_sensor_setup.nbr_sensor_setup(states.keys().cloned().collect());
@@ -160,29 +155,7 @@ impl<M, N, D, S, T, H> RuFiPlatform<M, N, D, S, T, H>
             println!("Error while serializing the message");
         }
 
-        //STEP 6: Receive the neighbouring exports from the network
-        match self.network.receive() {
-            Ok(NetworkUpdate::Update { msg }) => {
-                if let Ok(msg) = serde_json::from_slice(&msg) {
-                    self.mailbox.enqueue(msg);
-                    Ok(self_export)
-                } else {
-                    Err("Error deserializing the message".into())
-                }
-            }
-            Ok(NetworkUpdate::None) => {
-                println!("No message received from the network");
-                Ok(self_export)
-            }
-            Ok(NetworkUpdate::Err { reason }) => {
-                println!("Error receiving from the network: {}", reason);
-                Err(reason.into())
-            }
-            _ => {
-                println!("Error receiving from the network");
-                Err("Error receiving from the network".into())
-            }
-        }
+        Ok(self_export)
     }
 }
 

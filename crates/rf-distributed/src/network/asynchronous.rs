@@ -1,6 +1,7 @@
-use crate::network::{NetworkResult, NetworkUpdate};
+use crate::network::NetworkResult;
 use async_trait::async_trait;
 use bytes::Bytes;
+use crate::mailbox::Messages;
 
 /// This trait represent a network that will be used to send and receive messages
 #[async_trait]
@@ -17,11 +18,10 @@ pub trait Network {
     /// * `Ok(())` - If the message has been sent
     /// * `Err(e)` - If an error occurred
     async fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()>;
-    /// Receive a message from the network
+    /// Receive the messages from the network
     ///
     /// # Returns
     ///
-    /// * `Ok(NetworkUpdate)` - If a message has been received
-    /// * `Err(e)` - If an error occurred
-    async fn receive(&mut self) -> NetworkResult<NetworkUpdate>;
+    /// * `Messages` - the messages received
+    async fn receive(&mut self) -> Messages;
 }
