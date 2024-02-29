@@ -84,7 +84,13 @@ impl<N, D, S, T, H> RuFiPlatform<N, D, S, T, H>
             A: Clone + 'static + FromStr + Display,
     {
         for _ in 0..n {
-            self.single_cycle(program)?;
+            let export = self.single_cycle(program)?;
+
+            for hook in self.hooks.iter() {
+                hook(&export);
+            }
+            //sleep for one sec
+            self.time.sleep(Duration::from_secs(1));
         }
         Ok(())
     }
