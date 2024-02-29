@@ -137,7 +137,7 @@ impl<N, D, S, T, H> RuFiPlatform<N, D, S, T, H>
             nbr_sensors,
             states,
         );
-        //println!("CONTEXT: {:?}", context);
+        println!("CONTEXT: {:?}", context);
         let mut vm = RoundVM::new(context);
         vm.new_export_stack();
         let result = round(&mut vm, program);
@@ -146,16 +146,7 @@ impl<N, D, S, T, H> RuFiPlatform<N, D, S, T, H>
 
         //STEP 5: Publish the export
         let msg = Message::new(*vm.self_id(), self_export.clone(), std::time::SystemTime::now());
-        self.network.send(msg)?;
-        /*if let Ok(msg_ser) = serde_json::to_vec(&msg) {
-            if let Err(e) = self.network.send(*vm.self_id(), Bytes::from(msg_ser)) {
-                println!("Error sending the message: {}", e);
-            }
-        } else {
-            println!("Error while serializing the message");
-        }*/
-
-        Ok(self_export)
+        self.network.send(msg).and_then(|_| Ok(self_export))
     }
 }
 
