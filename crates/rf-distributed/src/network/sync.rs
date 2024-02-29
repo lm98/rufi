@@ -1,6 +1,6 @@
 use crate::network::NetworkResult;
-use bytes::Bytes;
 use crate::mailbox::Messages;
+use crate::message::Message;
 
 pub trait Network {
     /// Send a message to the network
@@ -14,12 +14,12 @@ pub trait Network {
     ///
     /// * `Ok(())` - If the message has been sent
     /// * `Err(e)` - If an error occurred
-    fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()>;
+    fn send(&mut self, msg: Message) -> NetworkResult<()>;
 
     /// Receive the messages from the network
     ///
     /// # Returns
     ///
     /// * `Messages` - the messages received
-    fn receive(&mut self) -> Messages;
+    fn receive(&mut self) -> NetworkResult<Messages>;
 }

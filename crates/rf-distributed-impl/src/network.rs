@@ -1,7 +1,7 @@
+use std::error::Error;
 use bytes::Bytes;
 use rf_distributed::network::{sync::Network, NetworkResult};
 use rumqttc::{Client, Event::Incoming, MqttOptions, QoS};
-use std::error::Error;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use rf_distributed::mailbox::{Mailbox, Messages};
@@ -57,18 +57,20 @@ impl SyncMQTTNetwork {
 }
 
 impl Network for SyncMQTTNetwork {
-    fn send(&mut self, source: i32, msg: Bytes) -> NetworkResult<()> {
+    fn send(&mut self, msg: Message) -> NetworkResult<()> {
+        let source = msg.source;
+        let to_send = serde_json::to_vec(&msg)?;
         self.client
             .try_publish(
                 format!("hello-rufi/{source}/subscriptions"),
                 QoS::AtMostOnce,
                 false,
-                msg,
+                to_send,
             )
             .map_err(|e| e.into())
     }
 
-    fn receive(&mut self) -> Messages {
+    fn receive(&mut self) -> NetworkResult<Messages> {
         let mut mailbox = MemoryLessMailbox::new();
 
         for u in self.mb.lock().unwrap().iter() {
@@ -77,6 +79,6 @@ impl Network for SyncMQTTNetwork {
             }
         }
 
-        mailbox.messages()
+        Ok(mailbox.messages())
     }
 }
