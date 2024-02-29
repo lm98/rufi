@@ -15,6 +15,7 @@ use rufi::core::export::Export;
 
 #[derive(Debug, Default)]
 struct Arguments {
+    pub num_cycles: i32,
     pub id: i32,
     pub source: bool,
 }
@@ -25,6 +26,9 @@ impl Arguments {
 
         for arg in args {
             match arg.as_ref() {
+                "-l" => r.num_cycles = 500,
+                "-s" => r.num_cycles = 100,
+                "-m" => r.num_cycles = 300,
                 "-t" => r.source = true,
                 "-f" => r.source = false,
                 x => r.id = x.parse::<i32>().unwrap(),
@@ -70,6 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse(std::env::args().skip(1))?;
     let self_id = args.id;
     let is_source = args.source;
+    let num_cycles = args.num_cycles;
 
     /* Set up a simple topology that will be used for these tests.
      *  Topology: [1] -- [2] -- [3] -- [4] -- [5].
@@ -106,5 +111,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     // Setup the platform and run the program
     RuFiPlatform::new(network?, context, discovery, setup, time, vec![debug_hook])
-        .run_forever(gradient)
+        .run_n_cycles(gradient, num_cycles as usize)
 }
